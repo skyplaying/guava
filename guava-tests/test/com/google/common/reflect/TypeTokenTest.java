@@ -17,6 +17,7 @@
 package com.google.common.reflect;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -44,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Test cases for {@link TypeToken}.
@@ -52,6 +54,7 @@ import junit.framework.TestCase;
  * @author Ben Yu
  */
 @AndroidIncompatible // lots of failures, possibly some related to bad equals() implementations?
+@NullUnmarked
 public class TypeTokenTest extends TestCase {
 
   private abstract static class StringList implements List<String> {}
@@ -64,11 +67,18 @@ public class TypeTokenTest extends TestCase {
     assertEquals(a, b);
   }
 
+  @SuppressWarnings("TestExceptionChecker") // see comment below
   public <T> void testVariableTypeTokenNotAllowed() {
+    /*
+     * We'd use assertThrows here, but that causes no exception to be thrown under Java 8,
+     * presumably because the ThrowingRunnable lambda triggers some kind of bug in Java 8's
+     * reflection implementation.
+     */
     try {
       new TypeToken<T>() {};
       fail();
     } catch (IllegalStateException expected) {
+      // Type variables aren't allowed.
     }
   }
 
@@ -574,9 +584,9 @@ public class TypeTokenTest extends TestCase {
 
   private abstract static class Fourth<T, D> extends Third<D, T> {}
 
-  private static class ConcreteIS extends Fourth<Integer, String> {}
+  private static class ConcreteIntegerString extends Fourth<Integer, String> {}
 
-  private static class ConcreteSI extends Fourth<String, Integer> {}
+  private static class ConcreteStringInteger extends Fourth<String, Integer> {}
 
   public void testAssignableClassToClass() {
     @SuppressWarnings("rawtypes") // To test TypeToken<List>
@@ -749,8 +759,8 @@ public class TypeTokenTest extends TestCase {
     assertFalse(tokenL.isSupertypeOf(List.class));
 
     TypeToken<First<String>> tokenF = new TypeToken<First<String>>() {};
-    assertTrue(tokenF.isSupertypeOf(ConcreteIS.class));
-    assertFalse(tokenF.isSupertypeOf(ConcreteSI.class));
+    assertTrue(tokenF.isSupertypeOf(ConcreteIntegerString.class));
+    assertFalse(tokenF.isSupertypeOf(ConcreteStringInteger.class));
   }
 
   public void testAssignableClassToArrayType() {
@@ -765,8 +775,8 @@ public class TypeTokenTest extends TestCase {
     assertFalse(tokenL.isSupertypeOf(IntegerList.class.getGenericInterfaces()[0]));
 
     TypeToken<First<String>> tokenF = new TypeToken<First<String>>() {};
-    assertTrue(tokenF.isSupertypeOf(ConcreteIS.class.getGenericSuperclass()));
-    assertFalse(tokenF.isSupertypeOf(ConcreteSI.class.getGenericSuperclass()));
+    assertTrue(tokenF.isSupertypeOf(ConcreteIntegerString.class.getGenericSuperclass()));
+    assertFalse(tokenF.isSupertypeOf(ConcreteStringInteger.class.getGenericSuperclass()));
   }
 
   public void testGenericArrayTypeToArrayType() {
@@ -788,8 +798,8 @@ public class TypeTokenTest extends TestCase {
     assertFalse(tokenF.isSupertypeOf(new TypeToken<Third<Integer, String>>() {}));
     assertTrue(tokenF.isSupertypeOf(new TypeToken<Fourth<Integer, String>>() {}));
     assertFalse(tokenF.isSupertypeOf(new TypeToken<Fourth<String, Integer>>() {}));
-    assertTrue(tokenF.isSupertypeOf(new TypeToken<ConcreteIS>() {}));
-    assertFalse(tokenF.isSupertypeOf(new TypeToken<ConcreteSI>() {}));
+    assertTrue(tokenF.isSupertypeOf(new TypeToken<ConcreteIntegerString>() {}));
+    assertFalse(tokenF.isSupertypeOf(new TypeToken<ConcreteStringInteger>() {}));
   }
 
   public void testAssignableWithWildcards() {
@@ -1147,11 +1157,9 @@ public class TypeTokenTest extends TestCase {
 
   @SuppressWarnings({"rawtypes", "unchecked"}) // purpose is to test raw type
   public void testGetSupertype_notSupertype() {
-    try {
-      new TypeToken<List<String>>() {}.getSupertype((Class) String.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new TypeToken<List<String>>() {}.getSupertype((Class) String.class));
   }
 
   public void testGetSupertype_fromArray() {
@@ -1235,11 +1243,7 @@ public class TypeTokenTest extends TestCase {
     TypeToken<? super Iterable<String>> type =
         (TypeToken<? super Iterable<String>>)
             TypeToken.of(Types.supertypeOf(new TypeToken<ImmutableList<String>>() {}.getType()));
-    try {
-      type.getSubtype(List.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> type.getSubtype(List.class));
   }
 
   public void testGetSubtype_fromWildcard_upperBounded() {
@@ -1247,18 +1251,21 @@ public class TypeTokenTest extends TestCase {
     TypeToken<? extends Iterable<String>> type =
         (TypeToken<? extends Iterable<String>>)
             TypeToken.of(Types.subtypeOf(new TypeToken<Iterable<String>>() {}.getType()));
-    try {
-      type.getSubtype(Iterable.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> type.getSubtype(Iterable.class));
   }
 
+  @SuppressWarnings("TestExceptionChecker") // see comment below
   public <T extends Iterable<String>> void testGetSubtype_fromTypeVariable() {
+    /*
+     * We'd use assertThrows here, but that causes capture() to return null under Java 8, presumably
+     * because the ThrowingRunnable lambda triggers some kind of bug in Java 8's reflection
+     * implementation.
+     */
     try {
       TypeToken.of(new TypeCapture<T>() {}.capture()).getSubtype(List.class);
       fail();
     } catch (IllegalArgumentException expected) {
+      // Type variables aren't allowed.
     }
   }
 
@@ -1377,7 +1384,9 @@ public class TypeTokenTest extends TestCase {
   }
 
   public void testGetSubtype_genericSubtypeOfRawTypeWithFewerTypeParameters() {
+    @SuppressWarnings("rawtypes") // test of raw types
     TypeToken<List> supertype = new TypeToken<List>() {};
+    @SuppressWarnings("rawtypes") // test of raw types
     TypeToken<MySpecialList> subtype = new TypeToken<MySpecialList>() {};
     assertTrue(subtype.isSubtypeOf(supertype));
     Class<?> actualSubtype = (Class<?>) supertype.getSubtype(subtype.getRawType()).getType();
@@ -1450,17 +1459,19 @@ public class TypeTokenTest extends TestCase {
   @SuppressWarnings("unchecked") // To construct TypeToken<T> with TypeToken.of()
   public <T> void testWhere_circleRejected() {
     TypeToken<List<T>> type = new TypeToken<List<T>>() {};
-    try {
-      type.where(
-          new TypeParameter<T>() {},
-          (TypeToken<T>) TypeToken.of(new TypeCapture<T>() {}.capture()));
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            type.where(
+                new TypeParameter<T>() {},
+                (TypeToken<T>) TypeToken.of(new TypeCapture<T>() {}.capture())));
   }
 
+  @SuppressWarnings("JUnitIncompatibleType")
   public void testWhere() {
     assertEquals(new TypeToken<Map<String, Integer>>() {}, mapOf(String.class, Integer.class));
+    // Type inference is doomed here: int.class is the same as Integer.class, so this is comparing
+    // TypeToken<int[]> and TypeToken<Integer[]>.
     assertEquals(new TypeToken<int[]>() {}, arrayOf(int.class));
     assertEquals(int[].class, arrayOf(int.class).getRawType());
   }
@@ -1587,11 +1598,7 @@ public class TypeTokenTest extends TestCase {
 
   public void testMethod_notDeclaredByType() throws NoSuchMethodException {
     Method sizeMethod = Map.class.getMethod("size");
-    try {
-      TypeToken.of(List.class).method(sizeMethod);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> TypeToken.of(List.class).method(sizeMethod));
   }
 
   public void testMethod_declaredBySuperclass() throws Exception {
@@ -1654,20 +1661,14 @@ public class TypeTokenTest extends TestCase {
 
   public void testConstructor_notDeclaredByType() throws NoSuchMethodException {
     Constructor<String> constructor = String.class.getConstructor();
-    try {
-      TypeToken.of(Object.class).constructor(constructor);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class, () -> TypeToken.of(Object.class).constructor(constructor));
   }
 
   public void testConstructor_declaredBySuperclass() throws NoSuchMethodException {
     Constructor<Object> constructor = Object.class.getConstructor();
-    try {
-      TypeToken.of(String.class).constructor(constructor);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class, () -> TypeToken.of(String.class).constructor(constructor));
   }
 
   public void testConstructor_equals() throws NoSuchMethodException {
@@ -1840,19 +1841,13 @@ public class TypeTokenTest extends TestCase {
     reserialize(new TypeToken<Map<String, Integer>>() {});
     reserialize(new IKnowMyType<Map<? super String, ? extends int[]>>() {}.type());
     reserialize(TypeToken.of(new TypeCapture<B>() {}.capture()).getTypes().rawTypes());
-    try {
-      SerializableTester.reserialize(TypeToken.of(new TypeCapture<B>() {}.capture()));
-      fail();
-    } catch (RuntimeException expected) {
-    }
+    assertThrows(
+        RuntimeException.class,
+        () -> SerializableTester.reserialize(TypeToken.of(new TypeCapture<B>() {}.capture())));
   }
 
   public <A> void testSerializable_typeVariableNotSupported() {
-    try {
-      new ITryToSerializeMyTypeVariable<String>().go();
-      fail();
-    } catch (RuntimeException expected) {
-    }
+    assertThrows(RuntimeException.class, () -> new ITryToSerializeMyTypeVariable<String>().go());
   }
 
   private static class ITryToSerializeMyTypeVariable<T> {
@@ -1890,7 +1885,7 @@ public class TypeTokenTest extends TestCase {
     }
   }
 
-  // For Guava bug http://code.google.com/p/guava-libraries/issues/detail?id=1025
+  // For Guava bug https://github.com/google/guava/issues/1025
   public void testDespiteGenericSignatureFormatError() {
     ImmutableSet<?> unused =
         ImmutableSet.copyOf(

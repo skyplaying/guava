@@ -22,6 +22,7 @@ import static com.google.common.util.concurrent.MoreExecutors.shutdownAndAwaitTe
 import static com.google.common.util.concurrent.Uninterruptibles.awaitUninterruptibly;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.util.concurrent.ClosingFuture.ClosingCallable;
 import com.google.common.util.concurrent.ClosingFuture.DeferredCloser;
@@ -32,11 +33,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link ClosingFuture} that exercise {@link
  * ClosingFuture#finishToValueAndCloser(ValueAndCloserConsumer, Executor)}.
  */
+@NullUnmarked
 public class ClosingFutureFinishToValueAndCloserTest extends AbstractClosingFutureTest {
   private final ExecutorService finishToValueAndCloserExecutor = newSingleThreadExecutor();
   private volatile ValueAndCloser<?> valueAndCloser;
@@ -61,12 +64,11 @@ public class ClosingFutureFinishToValueAndCloserTest extends AbstractClosingFutu
             executor);
     closingFuture.finishToValueAndCloser(
         new NoOpValueAndCloserConsumer<>(), finishToValueAndCloserExecutor);
-    try {
-      closingFuture.finishToValueAndCloser(
-          new NoOpValueAndCloserConsumer<>(), finishToValueAndCloserExecutor);
-      fail("should have thrown");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            closingFuture.finishToValueAndCloser(
+                new NoOpValueAndCloserConsumer<>(), finishToValueAndCloserExecutor));
   }
 
   public void testFinishToValueAndCloser_throwsAfterCallingFinishToFuture() throws Exception {
@@ -80,12 +82,11 @@ public class ClosingFutureFinishToValueAndCloserTest extends AbstractClosingFutu
             },
             executor);
     FluentFuture<Closeable> unused = closingFuture.finishToFuture();
-    try {
-      closingFuture.finishToValueAndCloser(
-          new NoOpValueAndCloserConsumer<>(), finishToValueAndCloserExecutor);
-      fail("should have thrown");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            closingFuture.finishToValueAndCloser(
+                new NoOpValueAndCloserConsumer<>(), finishToValueAndCloserExecutor));
   }
 
   @Override

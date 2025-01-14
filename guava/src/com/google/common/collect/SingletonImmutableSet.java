@@ -16,10 +16,13 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Iterators.singletonIterator;
+
 import com.google.common.annotations.GwtCompatible;
+import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.base.Preconditions;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Implementation of {@link ImmutableSet} with exactly one element.
@@ -29,7 +32,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @GwtCompatible(serializable = true, emulated = true)
 @SuppressWarnings("serial") // uses writeReplace(), not default serialization
-@ElementTypesAreNonnullByDefault
 final class SingletonImmutableSet<E> extends ImmutableSet<E> {
   // We deliberately avoid caching the asList and hashCode here, to ensure that with
   // compressed oops, a SingletonImmutableSet packs all the way down to the optimal 16 bytes.
@@ -46,13 +48,13 @@ final class SingletonImmutableSet<E> extends ImmutableSet<E> {
   }
 
   @Override
-  public boolean contains(@CheckForNull Object target) {
+  public boolean contains(@Nullable Object target) {
     return element.equals(target);
   }
 
   @Override
   public UnmodifiableIterator<E> iterator() {
-    return Iterators.singletonIterator(element);
+    return singletonIterator(element);
   }
 
   @Override
@@ -79,5 +81,14 @@ final class SingletonImmutableSet<E> extends ImmutableSet<E> {
   @Override
   public String toString() {
     return '[' + element.toString() + ']';
+  }
+
+  // redeclare to help optimizers with b/310253115
+  @SuppressWarnings("RedundantOverride")
+  @Override
+  @J2ktIncompatible // serialization
+  @GwtIncompatible // serialization
+  Object writeReplace() {
+    return super.writeReplace();
   }
 }

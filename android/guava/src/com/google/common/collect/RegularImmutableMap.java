@@ -22,13 +22,13 @@ import static com.google.common.collect.CollectPreconditions.checkEntryNotNull;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.GwtCompatible;
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Map.Entry;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A hash-based implementation of {@link ImmutableMap}.
@@ -36,7 +36,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Louis Wasserman
  */
 @GwtCompatible(serializable = true, emulated = true)
-@ElementTypesAreNonnullByDefault
 final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
   private static final byte ABSENT = -1;
 
@@ -68,7 +67,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
    * & (table.length - 1) instead of % table.length, though.
    */
 
-  @CheckForNull private final transient Object hashTable;
+  private final transient @Nullable Object hashTable;
   @VisibleForTesting final transient @Nullable Object[] alternatingKeysAndValues;
   private final transient int size;
 
@@ -148,8 +147,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
    *     these; [1] indicates how many element pairs in {@code alternatingKeysAndValues} are valid;
    *     and [2] is a {@link Builder.DuplicateKey} for the first duplicate key encountered.
    */
-  @CheckForNull
-  private static Object createHashTable(
+  private static @Nullable Object createHashTable(
       @Nullable Object[] alternatingKeysAndValues, int n, int tableSize, int keyOffset) {
     if (n == 1) {
       // for n=1 we don't create a hash table, but we need to do the checkEntryNotNull check!
@@ -281,8 +279,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     }
   }
 
-  @CheckForNull
-  static Object createHashTableOrThrow(
+  static @Nullable Object createHashTableOrThrow(
       @Nullable Object[] alternatingKeysAndValues, int n, int tableSize, int keyOffset) {
     Object hashTablePlus = createHashTable(alternatingKeysAndValues, n, tableSize, keyOffset);
     if (hashTablePlus instanceof Object[]) {
@@ -294,7 +291,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
   }
 
   private RegularImmutableMap(
-      @CheckForNull Object hashTable, @Nullable Object[] alternatingKeysAndValues, int size) {
+      @Nullable Object hashTable, @Nullable Object[] alternatingKeysAndValues, int size) {
     this.hashTable = hashTable;
     this.alternatingKeysAndValues = alternatingKeysAndValues;
     this.size = size;
@@ -307,8 +304,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
 
   @SuppressWarnings("unchecked")
   @Override
-  @CheckForNull
-  public V get(@CheckForNull Object key) {
+  public @Nullable V get(@Nullable Object key) {
     Object result = get(hashTable, alternatingKeysAndValues, size, 0, key);
     /*
      * We can't simply cast the result of `RegularImmutableMap.get` to V because of a bug in our
@@ -321,13 +317,12 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     }
   }
 
-  @CheckForNull
-  static Object get(
-      @CheckForNull Object hashTableObject,
+  static @Nullable Object get(
+      @Nullable Object hashTableObject,
       @Nullable Object[] alternatingKeysAndValues,
       int size,
       int keyOffset,
-      @CheckForNull Object key) {
+      @Nullable Object key) {
     if (key == null) {
       return null;
     } else if (size == 1) {
@@ -405,7 +400,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     }
 
     @Override
-    int copyIntoArray(Object[] dst, int offset) {
+    int copyIntoArray(@Nullable Object[] dst, int offset) {
       return asList().copyIntoArray(dst, offset);
     }
 
@@ -435,11 +430,19 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
         public boolean isPartialView() {
           return true;
         }
+
+        // redeclare to help optimizers with b/310253115
+        @SuppressWarnings("RedundantOverride")
+        @Override
+        @J2ktIncompatible // serialization
+        Object writeReplace() {
+          return super.writeReplace();
+        }
       };
     }
 
     @Override
-    public boolean contains(@CheckForNull Object object) {
+    public boolean contains(@Nullable Object object) {
       if (object instanceof Entry) {
         Entry<?, ?> entry = (Entry<?, ?>) object;
         Object k = entry.getKey();
@@ -457,6 +460,15 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     @Override
     public int size() {
       return size;
+    }
+
+    // redeclare to help optimizers with b/310253115
+    @SuppressWarnings("RedundantOverride")
+    @Override
+    @J2ktIncompatible // serialization
+    @GwtIncompatible // serialization
+    Object writeReplace() {
+      return super.writeReplace();
     }
   }
 
@@ -495,6 +507,13 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     public int size() {
       return size;
     }
+
+    // redeclare to help optimizers with b/310253115
+    @SuppressWarnings("RedundantOverride")
+    @Override
+    Object writeReplace() {
+      return super.writeReplace();
+    }
   }
 
   static final class KeySet<K> extends ImmutableSet<K> {
@@ -512,7 +531,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     }
 
     @Override
-    int copyIntoArray(Object[] dst, int offset) {
+    int copyIntoArray(@Nullable Object[] dst, int offset) {
       return asList().copyIntoArray(dst, offset);
     }
 
@@ -522,7 +541,7 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     }
 
     @Override
-    public boolean contains(@CheckForNull Object object) {
+    public boolean contains(@Nullable Object object) {
       return map.get(object) != null;
     }
 
@@ -535,6 +554,15 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
     public int size() {
       return map.size();
     }
+
+    // redeclare to help optimizers with b/310253115
+    @SuppressWarnings("RedundantOverride")
+    @Override
+    @J2ktIncompatible // serialization
+    @GwtIncompatible // serialization
+    Object writeReplace() {
+      return super.writeReplace();
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -546,6 +574,15 @@ final class RegularImmutableMap<K, V> extends ImmutableMap<K, V> {
   @Override
   boolean isPartialView() {
     return false;
+  }
+
+  // redeclare to help optimizers with b/310253115
+  @SuppressWarnings("RedundantOverride")
+  @Override
+  @J2ktIncompatible // serialization
+  @GwtIncompatible // serialization
+  Object writeReplace() {
+    return super.writeReplace();
   }
 
   // This class is never actually serialized directly, but we have to make the

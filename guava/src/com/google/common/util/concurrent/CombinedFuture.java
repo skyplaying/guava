@@ -19,21 +19,21 @@ import static com.google.common.util.concurrent.AggregateFuture.ReleaseResources
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.ImmutableCollection;
+import com.google.errorprone.annotations.concurrent.LazyInit;
+import com.google.j2objc.annotations.RetainedLocalRef;
 import com.google.j2objc.annotations.WeakOuter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Aggregate future that computes its value by calling a callable. */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 final class CombinedFuture<V extends @Nullable Object>
     extends AggregateFuture<@Nullable Object, V> {
-  @CheckForNull private CombinedFutureInterruptibleTask<?> task;
+  @LazyInit private @Nullable CombinedFutureInterruptibleTask<?> task;
 
   CombinedFuture(
       ImmutableCollection<? extends ListenableFuture<?>> futures,
@@ -56,11 +56,11 @@ final class CombinedFuture<V extends @Nullable Object>
   }
 
   @Override
-  void collectOneValue(int index, @CheckForNull Object returnValue) {}
+  void collectOneValue(int index, @Nullable Object returnValue) {}
 
   @Override
   void handleAllCompleted() {
-    CombinedFutureInterruptibleTask<?> localTask = task;
+    @RetainedLocalRef CombinedFutureInterruptibleTask<?> localTask = task;
     if (localTask != null) {
       localTask.execute();
     }
@@ -83,7 +83,7 @@ final class CombinedFuture<V extends @Nullable Object>
 
   @Override
   protected void interruptTask() {
-    CombinedFutureInterruptibleTask<?> localTask = task;
+    @RetainedLocalRef CombinedFutureInterruptibleTask<?> localTask = task;
     if (localTask != null) {
       localTask.interruptTask();
     }

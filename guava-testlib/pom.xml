@@ -15,12 +15,14 @@
   </description>
   <dependencies>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker-qual</artifactId>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.errorprone</groupId>
@@ -38,7 +40,8 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>compile</scope><!-- testlib must carry these transitively -->
+      <!-- *not* <scope>test</scope>; <scope>compile</scope> is right so that guava-testlib users get junit transitively. -->
+      <version>4.13.2</version>
     </dependency>
     <dependency>
       <!--
@@ -46,11 +49,26 @@
       -->
       <groupId>com.google.truth</groupId>
       <artifactId>truth</artifactId>
+      <version>${truth.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <!-- use the guava we're building. -->
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.mvnsearch</groupId>
+        <artifactId>toolchains-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-toolchains-plugin</artifactId>
+      </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>

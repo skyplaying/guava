@@ -15,6 +15,7 @@
 package com.google.common.io;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Streams.stream;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
@@ -25,17 +26,21 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A readable source of characters, such as a text file. Unlike a {@link Reader}, a {@code
@@ -78,7 +83,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public abstract class CharSource {
 
   /** Constructor for use by subclasses. */
@@ -122,6 +126,55 @@ public abstract class CharSource {
     return (reader instanceof BufferedReader)
         ? (BufferedReader) reader
         : new BufferedReader(reader);
+  }
+
+  /**
+   * Opens a new {@link Stream} for reading text one line at a time from this source. This method
+   * returns a new, independent stream each time it is called.
+   *
+   * <p>The returned stream is lazy and only reads from the source in the terminal operation. If an
+   * I/O error occurs while the stream is reading from the source or when the stream is closed, an
+   * {@link UncheckedIOException} is thrown.
+   *
+   * <p>Like {@link BufferedReader#readLine()}, this method considers a line to be a sequence of
+   * text that is terminated by (but does not include) one of {@code \r\n}, {@code \r} or {@code
+   * \n}. If the source's content does not end in a line termination sequence, it is treated as if
+   * it does.
+   *
+   * <p>The caller is responsible for ensuring that the returned stream is closed. For example:
+   *
+   * <pre>{@code
+   * try (Stream<String> lines = source.lines()) {
+   *   lines.map(...)
+   *      .filter(...)
+   *      .forEach(...);
+   * }
+   * }</pre>
+   *
+   * @throws IOException if an I/O error occurs while opening the stream
+   * @since 33.4.0 (but since 22.0 in the JRE flavor)
+   */
+  @MustBeClosed
+  @SuppressWarnings("Java7ApiChecker")
+  // If users use this when they shouldn't, we hope that NewApi will catch subsequent Stream calls.
+  @IgnoreJRERequirement
+  public Stream<String> lines() throws IOException {
+    BufferedReader reader = openBufferedStream();
+    return reader.lines().onClose(() -> closeUnchecked(reader));
+  }
+
+  @SuppressWarnings("Java7ApiChecker")
+  @IgnoreJRERequirement // helper for lines()
+  /*
+   * If we make these calls inline inside the lambda inside lines(), we get an Animal Sniffer error,
+   * despite the @IgnoreJRERequirement annotation there. For details, see ImmutableSortedMultiset.
+   */
+  private static void closeUnchecked(Closeable closeable) {
+    try {
+      closeable.close();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   /**
@@ -260,8 +313,7 @@ public abstract class CharSource {
    *
    * @throws IOException if an I/O error occurs while reading from this source
    */
-  @CheckForNull
-  public String readFirstLine() throws IOException {
+  public @Nullable String readFirstLine() throws IOException {
     Closer closer = Closer.create();
     try {
       BufferedReader reader = closer.register(openBufferedStream());
@@ -328,6 +380,34 @@ public abstract class CharSource {
       throw closer.rethrow(e);
     } finally {
       closer.close();
+    }
+  }
+
+  /**
+   * Reads all lines of text from this source, running the given {@code action} for each line as it
+   * is read.
+   *
+   * <p>Like {@link BufferedReader#readLine()}, this method considers a line to be a sequence of
+   * text that is terminated by (but does not include) one of {@code \r\n}, {@code \r} or {@code
+   * \n}. If the source's content does not end in a line termination sequence, it is treated as if
+   * it does.
+   *
+   * @throws IOException if an I/O error occurs while reading from this source or if {@code action}
+   *     throws an {@code UncheckedIOException}
+   * @since 33.4.0 (but since 22.0 in the JRE flavor)
+   */
+  @SuppressWarnings("Java7ApiChecker")
+  /*
+   * We have to rely on users not to call this without library desugaring, as NewApi won't flag
+   * Consumer creation.
+   */
+  @IgnoreJRERequirement
+  public void forEachLine(Consumer<? super String> action) throws IOException {
+    try (Stream<String> lines = lines()) {
+      // The lines should be ordered regardless in most cases, but use forEachOrdered to be sure
+      lines.forEachOrdered(action);
+    } catch (UncheckedIOException e) {
+      throw e.getCause();
     }
   }
 
@@ -506,8 +586,7 @@ public abstract class CharSource {
         Iterator<String> lines = LINE_SPLITTER.split(seq).iterator();
 
         @Override
-        @CheckForNull
-        protected String computeNext() {
+        protected @Nullable String computeNext() {
           if (lines.hasNext()) {
             String next = lines.next();
             // skip last line if it's empty
@@ -521,8 +600,15 @@ public abstract class CharSource {
     }
 
     @Override
-    @CheckForNull
-    public String readFirstLine() {
+    @SuppressWarnings("Java7ApiChecker")
+    // If users use this when they shouldn't, we hope that NewApi will catch subsequent Stream calls
+    @IgnoreJRERequirement
+    public Stream<String> lines() {
+      return stream(linesIterator());
+    }
+
+    @Override
+    public @Nullable String readFirstLine() {
       Iterator<String> lines = linesIterator();
       return lines.hasNext() ? lines.next() : null;
     }

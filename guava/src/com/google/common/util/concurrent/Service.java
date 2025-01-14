@@ -58,7 +58,6 @@ import java.util.concurrent.TimeoutException;
 @DoNotMock("Create an AbstractIdleService")
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public interface Service {
   /**
    * If the service state is {@link State#NEW}, this initiates service startup and returns
@@ -242,6 +241,9 @@ public interface Service {
    * @since 15.0 (present as an interface in 13.0)
    */
   abstract class Listener {
+    /** Constructor for use by subclasses. */
+    public Listener() {}
+
     /**
      * Called when the service transitions from {@linkplain State#NEW NEW} to {@linkplain
      * State#STARTING STARTING}. This occurs when {@link Service#startAsync} is called the first

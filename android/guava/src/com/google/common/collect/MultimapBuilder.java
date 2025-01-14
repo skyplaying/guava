@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable builder for {@link Multimap} instances, letting you independently select the desired
@@ -59,7 +59,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 16.0
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public abstract class MultimapBuilder<K0 extends @Nullable Object, V0 extends @Nullable Object> {
   /*
    * Leaving K and V as upper bounds rather than the actual key and value types allows type
@@ -430,7 +429,7 @@ public abstract class MultimapBuilder<K0 extends @Nullable Object, V0 extends @N
     @Override
     public <K extends K0, V extends V0> ListMultimap<K, V> build(
         Multimap<? extends K, ? extends V> multimap) {
-      return (ListMultimap<K, V>) super.build(multimap);
+      return (ListMultimap<K, V>) super.<K, V>build(multimap);
     }
   }
 
@@ -450,7 +449,7 @@ public abstract class MultimapBuilder<K0 extends @Nullable Object, V0 extends @N
     @Override
     public <K extends K0, V extends V0> SetMultimap<K, V> build(
         Multimap<? extends K, ? extends V> multimap) {
-      return (SetMultimap<K, V>) super.build(multimap);
+      return (SetMultimap<K, V>) super.<K, V>build(multimap);
     }
   }
 
@@ -470,7 +469,7 @@ public abstract class MultimapBuilder<K0 extends @Nullable Object, V0 extends @N
     @Override
     public <K extends K0, V extends V0> SortedSetMultimap<K, V> build(
         Multimap<? extends K, ? extends V> multimap) {
-      return (SortedSetMultimap<K, V>) super.build(multimap);
+      return (SortedSetMultimap<K, V>) super.<K, V>build(multimap);
     }
   }
 }

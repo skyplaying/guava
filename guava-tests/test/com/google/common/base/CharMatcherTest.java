@@ -37,6 +37,7 @@ import java.util.Random;
 import java.util.Set;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Unit test for {@link CharMatcher}.
@@ -44,7 +45,7 @@ import junit.framework.TestCase;
  * @author Kevin Bourrillion
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
+@NullMarked
 public class CharMatcherTest extends TestCase {
 
   @J2ktIncompatible
@@ -112,7 +113,6 @@ public class CharMatcherTest extends TestCase {
   // method, but by overall "scenario". Also, the variety of actual tests we
   // do borders on absurd overkill. Better safe than sorry, though?
 
-  @J2ktIncompatible
   @GwtIncompatible // java.util.BitSet
   public void testSetBits() {
     doTestSetBits(CharMatcher.any());
@@ -133,7 +133,6 @@ public class CharMatcherTest extends TestCase {
     doTestSetBits(inRange('A', 'Z').and(inRange('F', 'K').negate()));
   }
 
-  @J2ktIncompatible
   @GwtIncompatible // java.util.BitSet
   private void doTestSetBits(CharMatcher matcher) {
     BitSet bitset = new BitSet();
@@ -294,6 +293,7 @@ public class CharMatcherTest extends TestCase {
     assertEquals(0, matcher.countIn(s));
   }
 
+  @SuppressWarnings("InlineMeInliner") // String.repeat unavailable under Java 8
   private void reallyTestAllMatches(CharMatcher matcher, CharSequence s) {
     assertTrue(matcher.matches(s.charAt(0)));
     assertEquals(0, matcher.indexIn(s));
@@ -311,6 +311,8 @@ public class CharMatcherTest extends TestCase {
     assertEquals(s.length(), matcher.countIn(s));
   }
 
+  // Kotlin subSequence()/replace() always return new strings, violating expectations of this test
+  @J2ktIncompatible
   public void testGeneral() {
     doTestGeneral(is('a'), 'a', 'b');
     doTestGeneral(isNot('a'), 'b', 'a');
@@ -680,13 +682,11 @@ public class CharMatcherTest extends TestCase {
     assertSame(CharMatcher.any(), CharMatcher.any().precomputed());
   }
 
-  @J2ktIncompatible
   @GwtIncompatible // java.util.BitSet
   private static BitSet bitSet(String chars) {
     return bitSet(chars.toCharArray());
   }
 
-  @J2ktIncompatible
   @GwtIncompatible // java.util.BitSet
   private static BitSet bitSet(char[] chars) {
     BitSet tmp = new BitSet();
@@ -696,7 +696,6 @@ public class CharMatcherTest extends TestCase {
     return tmp;
   }
 
-  @J2ktIncompatible
   @GwtIncompatible // java.util.Random, java.util.BitSet
   public void testSmallCharMatcher() {
     CharMatcher len1 = SmallCharMatcher.from(bitSet("#"), "#");
@@ -738,7 +737,7 @@ public class CharMatcherTest extends TestCase {
       positive.add(c);
     }
     for (int c = 0; c <= Character.MAX_VALUE; c++) {
-      assertFalse(positive.contains(new Character((char) c)) ^ m.matches((char) c));
+      assertFalse(positive.contains(Character.valueOf((char) c)) ^ m.matches((char) c));
     }
   }
 

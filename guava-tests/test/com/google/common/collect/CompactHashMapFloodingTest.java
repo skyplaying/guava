@@ -16,13 +16,19 @@
 
 package com.google.common.collect;
 
-import java.util.Map;
+import static java.lang.Math.log;
 
+import com.google.common.annotations.GwtIncompatible;
+import java.util.Map;
+import org.jspecify.annotations.NullUnmarked;
+
+@GwtIncompatible
+@NullUnmarked
 public class CompactHashMapFloodingTest extends AbstractHashFloodingTest<Map<Object, Object>> {
   public CompactHashMapFloodingTest() {
     super(
         ImmutableList.of(Construction.mapFromKeys(CompactHashMap::create)),
-        n -> n * Math.log(n),
+        n -> n * log(n),
         ImmutableList.of(QueryOp.MAP_GET));
   }
 }

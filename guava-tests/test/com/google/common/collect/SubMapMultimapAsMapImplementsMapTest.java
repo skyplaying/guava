@@ -16,11 +16,13 @@
 
 package com.google.common.collect;
 
+import static java.util.Collections.singleton;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.testing.MapInterfaceTest;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Test {@code TreeMultimap.asMap().subMap()} with {@link MapInterfaceTest}.
@@ -28,6 +30,7 @@ import java.util.Map;
  * @author Jared Levy
  */
 @GwtCompatible
+@NullMarked
 public class SubMapMultimapAsMapImplementsMapTest extends AbstractMultimapAsMapImplementsMapTest {
 
   public SubMapMultimapAsMapImplementsMapTest() {
@@ -66,7 +69,7 @@ public class SubMapMultimapAsMapImplementsMapTest extends AbstractMultimapAsMapI
 
   @Override
   protected Collection<Integer> getValueNotInPopulatedMap() {
-    return Collections.singleton(-2);
+    return singleton(-2);
   }
 
   @Override

@@ -16,6 +16,8 @@
 
 package com.google.common.io;
 
+import static org.junit.Assert.assertThrows;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import java.io.EOFException;
@@ -27,12 +29,14 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.CharBuffer;
 import java.util.List;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link CharStreams}.
  *
  * @author Chris Nokleberg
  */
+@NullUnmarked
 public class CharStreamsTest extends IoTestCase {
 
   private static final String TEXT = "The quick brown fox jumped over the lazy dog.";
@@ -116,13 +120,9 @@ public class CharStreamsTest extends IoTestCase {
     assertEquals("ab", sb.toString());
   }
 
-  public void testSkipFully_EOF() throws IOException {
+  public void testSkipFully_eof() throws IOException {
     Reader reader = new StringReader("abcde");
-    try {
-      CharStreams.skipFully(reader, 6);
-      fail("expected EOFException");
-    } catch (EOFException expected) {
-    }
+    assertThrows(EOFException.class, () -> CharStreams.skipFully(reader, 6));
   }
 
   public void testSkipFully() throws IOException {
@@ -218,7 +218,7 @@ public class CharStreamsTest extends IoTestCase {
   }
 
   /**
-   * Test for Guava issue 1061: http://code.google.com/p/guava-libraries/issues/detail?id=1061
+   * Test for Guava issue 1061: https://github.com/google/guava/issues/1061
    *
    * <p>CharStreams.copy was failing to clear its CharBuffer after each read call, which effectively
    * reduced the available size of the buffer each time a call to read didn't fill up the available
@@ -226,6 +226,7 @@ public class CharStreamsTest extends IoTestCase {
    * is permanently reduced, but with certain Reader implementations it could also cause the buffer
    * size to reach 0, causing an infinite loop.
    */
+  @SuppressWarnings("InlineMeInliner") // String.repeat unavailable under Java 8
   public void testCopyWithReaderThatDoesNotFillBuffer() throws IOException {
     // need a long enough string for the buffer to hit 0 remaining before the copy completes
     String string = Strings.repeat("0123456789", 100);
@@ -270,17 +271,9 @@ public class CharStreamsTest extends IoTestCase {
     nullWriter.append(null);
     nullWriter.append(null, 0, 4);
 
-    try {
-      nullWriter.append(null, -1, 4);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> nullWriter.append(null, -1, 4));
 
-    try {
-      nullWriter.append(null, 0, 5);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> nullWriter.append(null, 0, 5));
 
     // nothing really to assert?
     assertSame(CharStreams.nullWriter(), CharStreams.nullWriter());

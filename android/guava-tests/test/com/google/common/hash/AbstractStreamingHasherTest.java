@@ -16,7 +16,8 @@
 
 package com.google.common.hash;
 
-import static com.google.common.base.Charsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -29,12 +30,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for AbstractStreamingHasher.
  *
  * @author Dimitris Andreou
  */
+@NullUnmarked
 public class AbstractStreamingHasherTest extends TestCase {
   public void testBytes() {
     Sink sink = new Sink(4); // byte order insignificant here
@@ -113,21 +116,9 @@ public class AbstractStreamingHasherTest extends TestCase {
 
   public void testCorrectExceptions() {
     Sink sink = new Sink(4);
-    try {
-      sink.putBytes(new byte[8], -1, 4);
-      fail();
-    } catch (IndexOutOfBoundsException ok) {
-    }
-    try {
-      sink.putBytes(new byte[8], 0, 16);
-      fail();
-    } catch (IndexOutOfBoundsException ok) {
-    }
-    try {
-      sink.putBytes(new byte[8], 0, -1);
-      fail();
-    } catch (IndexOutOfBoundsException ok) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> sink.putBytes(new byte[8], -1, 4));
+    assertThrows(IndexOutOfBoundsException.class, () -> sink.putBytes(new byte[8], 0, 16));
+    assertThrows(IndexOutOfBoundsException.class, () -> sink.putBytes(new byte[8], 0, -1));
   }
 
   /**

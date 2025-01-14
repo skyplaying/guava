@@ -29,7 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link ExecutorService} that returns {@link ListenableFuture} instances. To create an instance
@@ -43,7 +43,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
     "Use TestingExecutors.sameThreadScheduledExecutor, or wrap a real Executor from "
         + "java.util.concurrent.Executors with MoreExecutors.listeningDecorator")
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public interface ListeningExecutorService extends ExecutorService {
   /**
    * @return a {@code ListenableFuture} representing pending completion of the task
@@ -116,7 +115,7 @@ public interface ListeningExecutorService extends ExecutorService {
   /**
    * Duration-based overload of {@link #invokeAll(Collection, long, TimeUnit)}.
    *
-   * @since NEXT
+   * @since 32.1.0
    */
   @J2ktIncompatible
   default <T extends @Nullable Object> List<Future<T>> invokeAll(
@@ -127,7 +126,7 @@ public interface ListeningExecutorService extends ExecutorService {
   /**
    * Duration-based overload of {@link #invokeAny(Collection, long, TimeUnit)}.
    *
-   * @since NEXT
+   * @since 32.1.0
    */
   @J2ktIncompatible
   default <T extends @Nullable Object> T invokeAny(
@@ -139,7 +138,7 @@ public interface ListeningExecutorService extends ExecutorService {
   /**
    * Duration-based overload of {@link #awaitTermination(long, TimeUnit)}.
    *
-   * @since NEXT
+   * @since 32.1.0
    */
   @J2ktIncompatible
   default boolean awaitTermination(Duration timeout) throws InterruptedException {

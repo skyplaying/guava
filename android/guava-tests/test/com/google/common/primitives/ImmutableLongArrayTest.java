@@ -14,9 +14,11 @@
 
 package com.google.common.primitives;
 
+import static com.google.common.primitives.ReflectionFreeAssertThrows.assertThrows;
 import static com.google.common.primitives.TestPlatform.reduceIterationsIfGwt;
 import static com.google.common.testing.SerializableTester.reserialize;
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.Arrays.stream;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
@@ -37,12 +39,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.LongStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jspecify.annotations.NullUnmarked;
 
-/** @author Kevin Bourrillion */
+/**
+ * @author Kevin Bourrillion
+ */
 @GwtCompatible(emulated = true)
+@NullUnmarked
 public class ImmutableLongArrayTest extends TestCase {
   // Test all creation paths very lazily: by assuming asList() works
 
@@ -137,6 +144,14 @@ public class ImmutableLongArrayTest extends TestCase {
     assertThat(iia.asList()).containsExactly(0L, 1L, 3L).inOrder();
   }
 
+  public void testCopyOf_stream() {
+    assertThat(ImmutableLongArray.copyOf(LongStream.empty()))
+        .isSameInstanceAs(ImmutableLongArray.of());
+    assertThat(ImmutableLongArray.copyOf(LongStream.of(0, 1, 3)).asList())
+        .containsExactly(0L, 1L, 3L)
+        .inOrder();
+  }
+
   public void testBuilder_presize_zero() {
     ImmutableLongArray.Builder builder = ImmutableLongArray.builder(0);
     builder.add(5L);
@@ -145,11 +160,7 @@ public class ImmutableLongArrayTest extends TestCase {
   }
 
   public void testBuilder_presize_negative() {
-    try {
-      ImmutableLongArray.builder(-1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> ImmutableLongArray.builder(-1));
   }
 
   /**
@@ -158,7 +169,7 @@ public class ImmutableLongArrayTest extends TestCase {
    */
   public void testBuilder_bruteForce() {
     for (int i = 0; i < reduceIterationsIfGwt(100); i++) {
-      ImmutableLongArray.Builder builder = ImmutableLongArray.builder(RANDOM.nextInt(20));
+      ImmutableLongArray.Builder builder = ImmutableLongArray.builder(random.nextInt(20));
       AtomicLong counter = new AtomicLong(0);
       while (counter.get() < 1000) {
         BuilderOp op = BuilderOp.randomOp();
@@ -181,7 +192,7 @@ public class ImmutableLongArrayTest extends TestCase {
     ADD_ARRAY {
       @Override
       void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
-        long[] array = new long[RANDOM.nextInt(10)];
+        long[] array = new long[random.nextInt(10)];
         for (int i = 0; i < array.length; i++) {
           array[i] = counter.getAndIncrement();
         }
@@ -192,7 +203,7 @@ public class ImmutableLongArrayTest extends TestCase {
       @Override
       void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
         List<Long> list = new ArrayList<>();
-        long num = RANDOM.nextInt(10);
+        long num = random.nextInt(10);
         for (int i = 0; i < num; i++) {
           list.add(counter.getAndIncrement());
         }
@@ -203,17 +214,27 @@ public class ImmutableLongArrayTest extends TestCase {
       @Override
       void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
         List<Long> list = new ArrayList<>();
-        long num = RANDOM.nextInt(10);
+        long num = random.nextInt(10);
         for (int i = 0; i < num; i++) {
           list.add(counter.getAndIncrement());
         }
         builder.addAll(iterable(list));
       }
     },
+    ADD_STREAM {
+      @Override
+      void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
+        long[] array = new long[random.nextInt(10)];
+        for (int i = 0; i < array.length; i++) {
+          array[i] = counter.getAndIncrement();
+        }
+        builder.addAll(stream(array));
+      }
+    },
     ADD_IIA {
       @Override
       void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
-        long[] array = new long[RANDOM.nextInt(10)];
+        long[] array = new long[random.nextInt(10)];
         for (int i = 0; i < array.length; i++) {
           array[i] = counter.getAndIncrement();
         }
@@ -223,7 +244,7 @@ public class ImmutableLongArrayTest extends TestCase {
     ADD_LARGER_ARRAY {
       @Override
       void doIt(ImmutableLongArray.Builder builder, AtomicLong counter) {
-        long[] array = new long[RANDOM.nextInt(200) + 200];
+        long[] array = new long[random.nextInt(200) + 200];
         for (int i = 0; i < array.length; i++) {
           array[i] = counter.getAndIncrement();
         }
@@ -235,13 +256,13 @@ public class ImmutableLongArrayTest extends TestCase {
     static final BuilderOp[] values = values();
 
     static BuilderOp randomOp() {
-      return values[RANDOM.nextInt(values.length)];
+      return values[random.nextInt(values.length)];
     }
 
     abstract void doIt(ImmutableLongArray.Builder builder, AtomicLong counter);
   }
 
-  private static final Random RANDOM = new Random(42);
+  private static final Random random = new Random(42);
 
   public void testLength() {
     assertThat(ImmutableLongArray.of().length()).isEqualTo(0);
@@ -268,23 +289,11 @@ public class ImmutableLongArrayTest extends TestCase {
 
   public void testGet_bad() {
     ImmutableLongArray iia = ImmutableLongArray.of(0, 1, 3);
-    try {
-      iia.get(-1);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
-    try {
-      iia.get(3);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> iia.get(-1));
+    assertThrows(IndexOutOfBoundsException.class, () -> iia.get(3));
 
-    iia = iia.subArray(1, 2);
-    try {
-      iia.get(-1);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    ImmutableLongArray sub = iia.subArray(1, 2);
+    assertThrows(IndexOutOfBoundsException.class, () -> sub.get(-1));
   }
 
   public void testIndexOf() {
@@ -317,6 +326,22 @@ public class ImmutableLongArrayTest extends TestCase {
     assertThat(iia.subArray(1, 5).contains(1)).isTrue();
   }
 
+  public void testForEach() {
+    ImmutableLongArray.of().forEach(i -> fail());
+    ImmutableLongArray.of(0, 1, 3).subArray(1, 1).forEach(i -> fail());
+
+    AtomicLong count = new AtomicLong(0);
+    ImmutableLongArray.of(0, 1, 2, 3)
+        .forEach(i -> assertThat(i).isEqualTo(count.getAndIncrement()));
+    assertThat(count.get()).isEqualTo(4);
+  }
+
+  public void testStream() {
+    ImmutableLongArray.of().stream().forEach(i -> fail());
+    ImmutableLongArray.of(0, 1, 3).subArray(1, 1).stream().forEach(i -> fail());
+    assertThat(ImmutableLongArray.of(0, 1, 3).stream().toArray()).isEqualTo(new long[] {0, 1, 3});
+  }
+
   public void testSubArray() {
     ImmutableLongArray iia0 = ImmutableLongArray.of();
     ImmutableLongArray iia1 = ImmutableLongArray.of(5);
@@ -329,16 +354,8 @@ public class ImmutableLongArrayTest extends TestCase {
     assertThat(iia3.subArray(0, 2).asList()).containsExactly(5L, 25L).inOrder();
     assertThat(iia3.subArray(1, 3).asList()).containsExactly(25L, 125L).inOrder();
 
-    try {
-      iia3.subArray(-1, 1);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
-    try {
-      iia3.subArray(1, 4);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> iia3.subArray(-1, 1));
+    assertThrows(IndexOutOfBoundsException.class, () -> iia3.subArray(1, 4));
   }
 
   /*

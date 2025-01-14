@@ -21,7 +21,7 @@ import static java.lang.Double.NaN;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.errorprone.annotations.concurrent.LazyInit;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The representation of a linear transformation between real numbers {@code x} and {@code y}.
@@ -36,8 +36,14 @@ import javax.annotation.CheckForNull;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public abstract class LinearTransformation {
+  /**
+   * Constructor for use by subclasses inside Guava.
+   *
+   * @deprecated Create instances by using the static factory methods of the class.
+   */
+  @Deprecated
+  public LinearTransformation() {}
 
   /**
    * Start building an instance which maps {@code x = x1} to {@code y = y1}. Both arguments must be
@@ -163,7 +169,7 @@ public abstract class LinearTransformation {
     final double slope;
     final double yIntercept;
 
-    @CheckForNull @LazyInit LinearTransformation inverse;
+    @LazyInit @Nullable LinearTransformation inverse;
 
     RegularLinearTransformation(double slope, double yIntercept) {
       this.slope = slope;
@@ -221,7 +227,7 @@ public abstract class LinearTransformation {
 
     final double x;
 
-    @CheckForNull @LazyInit LinearTransformation inverse;
+    @LazyInit @Nullable LinearTransformation inverse;
 
     VerticalLinearTransformation(double x) {
       this.x = x;

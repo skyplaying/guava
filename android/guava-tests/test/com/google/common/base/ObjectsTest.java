@@ -21,6 +21,7 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.testing.NullPointerTester;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link Objects}.
@@ -28,6 +29,7 @@ import junit.framework.TestCase;
  * @author Laurence Gonsalves
  */
 @GwtCompatible(emulated = true)
+@NullUnmarked
 public class ObjectsTest extends TestCase {
 
   public void testEqual() throws Exception {
@@ -47,7 +49,7 @@ public class ObjectsTest extends TestCase {
 
   public void testHashCode() throws Exception {
     int h1 = Objects.hashCode(1, "two", 3.0);
-    int h2 = Objects.hashCode(new Integer(1), new String("two"), new Double(3.0));
+    int h2 = Objects.hashCode(Integer.valueOf(1), new String("two"), Double.valueOf(3.0));
     // repeatable
     assertEquals(h1, h2);
 

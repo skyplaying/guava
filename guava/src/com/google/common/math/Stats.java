@@ -36,7 +36,7 @@ import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A bundle of statistical summary values -- sum, count, mean/average, min and max, and several
@@ -55,7 +55,7 @@ import javax.annotation.CheckForNull;
  * <p>Static convenience methods called {@code meanOf} are also provided for users who wish to
  * calculate <i>only</i> the mean.
  *
- * <p><b>Java 8 users:</b> If you are not using any of the variance statistics, you may wish to use
+ * <p><b>Java 8+ users:</b> If you are not using any of the variance statistics, you may wish to use
  * built-in JDK libraries instead of this class.
  *
  * @author Pete Gillin
@@ -64,7 +64,6 @@ import javax.annotation.CheckForNull;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class Stats implements Serializable {
 
   private final long count;
@@ -162,7 +161,7 @@ public final class Stats implements Serializable {
    * the values using {@link #toStats()} instead.
    *
    * @param values a series of values
-   * @since 28.2
+   * @since 28.2 (but only since 33.4.0 in the Android flavor)
    */
   public static Stats of(DoubleStream values) {
     return values
@@ -178,7 +177,7 @@ public final class Stats implements Serializable {
    * the values using {@link #toStats()} instead.
    *
    * @param values a series of values
-   * @since 28.2
+   * @since 28.2 (but only since 33.4.0 in the Android flavor)
    */
   public static Stats of(IntStream values) {
     return values
@@ -195,7 +194,7 @@ public final class Stats implements Serializable {
    *
    * @param values a series of values, which will be converted to {@code double} values (this may
    *     cause loss of precision for longs of magnitude over 2^53 (slightly over 9e15))
-   * @since 28.2
+   * @since 28.2 (but only since 33.4.0 in the Android flavor)
    */
   public static Stats of(LongStream values) {
     return values
@@ -212,7 +211,7 @@ public final class Stats implements Serializable {
    * <p>If you have any of the primitive streams {@code DoubleStream}, {@code IntStream}, or {@code
    * LongStream}, you should use the factory method {@link #of} instead.
    *
-   * @since 28.2
+   * @since 28.2 (but only since 33.4.0 in the Android flavor)
    */
   public static Collector<Number, StatsAccumulator, Stats> toStats() {
     return Collector.of(
@@ -417,7 +416,7 @@ public final class Stats implements Serializable {
    * {@code strictfp}-like semantics.)
    */
   @Override
-  public boolean equals(@CheckForNull Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (obj == null) {
       return false;
     }

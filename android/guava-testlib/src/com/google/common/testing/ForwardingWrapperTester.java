@@ -36,7 +36,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tester to ensure forwarding wrapper works by delegating calls to the corresponding method with
@@ -57,7 +58,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @GwtIncompatible
 @J2ktIncompatible
-@ElementTypesAreNonnullByDefault
+@NullMarked
 public final class ForwardingWrapperTester {
 
   private boolean testsEquals = false;
@@ -84,9 +85,9 @@ public final class ForwardingWrapperTester {
     Method[] methods = getMostConcreteMethods(interfaceType);
     AccessibleObject.setAccessible(methods, true);
     for (Method method : methods) {
-      // Under java 8, interfaces can have default methods that aren't abstract.
+      // Interfaces can have default methods that aren't abstract.
       // No need to verify them.
-      // Can't check isDefault() for JDK 7 compatibility.
+      // Can't check isDefault() for Android compatibility.
       if (!Modifier.isAbstract(method.getModifiers())) {
         continue;
       }
@@ -139,7 +140,7 @@ public final class ForwardingWrapperTester {
             interfaceType,
             new AbstractInvocationHandler() {
               @Override
-              protected Object handleInvocation(Object p, Method m, Object[] args)
+              protected Object handleInvocation(Object p, Method m, @Nullable Object[] args)
                   throws Throwable {
                 throw exception;
               }

@@ -16,7 +16,11 @@
 
 package com.google.common.io;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.FilterReader;
@@ -26,6 +30,7 @@ import java.io.StringReader;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 import java.util.List;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit tests for {@link LineBuffer} and {@link LineReader}.
@@ -33,6 +38,7 @@ import java.util.List;
  * @author Chris Nokleberg
  */
 @AndroidIncompatible // occasionally very slow
+@NullUnmarked
 public class LineBufferTest extends IoTestCase {
 
   public void testProcess() throws IOException {
@@ -53,7 +59,8 @@ public class LineBufferTest extends IoTestCase {
     bufferHelper("mixed\nline\rendings\r\n", "mixed\n", "line\r", "endings\r\n");
   }
 
-  private static final int[] CHUNK_SIZES = {1, 2, 3, Integer.MAX_VALUE};
+  private static final ImmutableSet<Integer> CHUNK_SIZES =
+      ImmutableSet.of(1, 2, 3, Integer.MAX_VALUE);
 
   private static void bufferHelper(String input, String... expect) throws IOException {
 
@@ -69,7 +76,7 @@ public class LineBufferTest extends IoTestCase {
             });
 
     for (int chunk : CHUNK_SIZES) {
-      chunk = Math.max(1, Math.min(chunk, input.length()));
+      chunk = max(1, min(chunk, input.length()));
       assertEquals(expectProcess, bufferHelper(input, chunk));
       assertEquals(expectRead, readUsingJava(input, chunk));
       assertEquals(expectRead, readUsingReader(input, chunk, true));
@@ -89,7 +96,7 @@ public class LineBufferTest extends IoTestCase {
     char[] chars = input.toCharArray();
     int off = 0;
     while (off < chars.length) {
-      int len = Math.min(chars.length, off + chunk) - off;
+      int len = min(chars.length, off + chunk) - off;
       lineBuf.add(chars, off, len);
       off += len;
     }
@@ -136,7 +143,7 @@ public class LineBufferTest extends IoTestCase {
     return new FilterReader(new StringReader(input)) {
       @Override
       public int read(char[] cbuf, int off, int len) throws IOException {
-        return super.read(cbuf, off, Math.min(chunk, len));
+        return super.read(cbuf, off, min(chunk, len));
       }
     };
   }

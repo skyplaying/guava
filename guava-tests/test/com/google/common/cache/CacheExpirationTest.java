@@ -19,6 +19,7 @@ import static com.google.common.cache.TestingRemovalListeners.countingRemovalLis
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import com.google.common.cache.TestingCacheLoaders.IdentityLoader;
 import com.google.common.cache.TestingRemovalListeners.CountingRemovalListener;
@@ -29,9 +30,9 @@ import com.google.common.util.concurrent.Callables;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests relating to cache expiration: make sure entries expire at the right times, make sure
@@ -40,6 +41,7 @@ import junit.framework.TestCase;
  * @author mike nonemacher
  */
 @SuppressWarnings("deprecation") // tests of deprecated method
+@NullUnmarked
 public class CacheExpirationTest extends TestCase {
 
   private static final long EXPIRING_TIME = 1000;
@@ -415,12 +417,12 @@ public class CacheExpirationTest extends TestCase {
         TestingRemovalListeners.queuingRemovalListener();
     Cache<Integer, Integer> cache =
         CacheBuilder.newBuilder()
-            .expireAfterAccess(1, TimeUnit.MINUTES)
+            .expireAfterAccess(1, MINUTES)
             .removalListener(listener)
             .ticker(ticker)
             .build();
     cache.put(1, 1);
-    ticker.advance(10, TimeUnit.MINUTES);
+    ticker.advance(10, MINUTES);
     cache.invalidateAll();
 
     assertThat(listener.poll().getCause()).isEqualTo(RemovalCause.EXPIRED);

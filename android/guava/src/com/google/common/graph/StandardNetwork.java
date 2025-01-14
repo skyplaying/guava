@@ -48,7 +48,6 @@ import java.util.TreeMap;
  * @param <N> Node parameter type
  * @param <E> Edge parameter type
  */
-@ElementTypesAreNonnullByDefault
 class StandardNetwork<N, E> extends AbstractNetwork<N, E> {
   private final boolean isDirected;
   private final boolean allowsParallelEdges;
@@ -130,7 +129,7 @@ class StandardNetwork<N, E> extends AbstractNetwork<N, E> {
 
   @Override
   public Set<E> incidentEdges(N node) {
-    return checkedConnections(node).incidentEdges();
+    return nodeInvalidatableSet(checkedConnections(node).incidentEdges(), node);
   }
 
   @Override
@@ -143,7 +142,7 @@ class StandardNetwork<N, E> extends AbstractNetwork<N, E> {
 
   @Override
   public Set<N> adjacentNodes(N node) {
-    return checkedConnections(node).adjacentNodes();
+    return nodeInvalidatableSet(checkedConnections(node).adjacentNodes(), node);
   }
 
   @Override
@@ -153,27 +152,27 @@ class StandardNetwork<N, E> extends AbstractNetwork<N, E> {
       return ImmutableSet.of();
     }
     checkArgument(containsNode(nodeV), NODE_NOT_IN_GRAPH, nodeV);
-    return connectionsU.edgesConnecting(nodeV);
+    return nodePairInvalidatableSet(connectionsU.edgesConnecting(nodeV), nodeU, nodeV);
   }
 
   @Override
   public Set<E> inEdges(N node) {
-    return checkedConnections(node).inEdges();
+    return nodeInvalidatableSet(checkedConnections(node).inEdges(), node);
   }
 
   @Override
   public Set<E> outEdges(N node) {
-    return checkedConnections(node).outEdges();
+    return nodeInvalidatableSet(checkedConnections(node).outEdges(), node);
   }
 
   @Override
   public Set<N> predecessors(N node) {
-    return checkedConnections(node).predecessors();
+    return nodeInvalidatableSet(checkedConnections(node).predecessors(), node);
   }
 
   @Override
   public Set<N> successors(N node) {
-    return checkedConnections(node).successors();
+    return nodeInvalidatableSet(checkedConnections(node).successors(), node);
   }
 
   final NetworkConnections<N, E> checkedConnections(N node) {

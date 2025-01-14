@@ -27,8 +27,10 @@ import com.google.common.util.concurrent.AbstractFutureBenchmarks.Impl;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import org.jspecify.annotations.NullUnmarked;
 
 /** Measures the size of AbstractFuture implementations. */
+@NullUnmarked
 public class AbstractFutureFootprintBenchmark {
 
   enum State {
@@ -98,8 +100,6 @@ public class AbstractFutureFootprintBenchmark {
       case FAILED:
         f.setException(new Exception());
         break;
-      default:
-        throw new AssertionError();
     }
     return f;
   }

@@ -15,8 +15,7 @@
 package com.google.common.base;
 
 import com.google.common.annotations.GwtCompatible;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Determines a true or false value for a given input; a pre-Java-8 version of {@link
@@ -45,10 +44,9 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 2.0
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public interface Predicate<T extends @Nullable Object> {
   /**
-   * Returns the result of applying this predicate to {@code input} (Java 8 users, see notes in the
+   * Returns the result of applying this predicate to {@code input} (Java 8+ users, see notes in the
    * class documentation above). This method is <i>generally expected</i>, but not absolutely
    * required, to have the following properties:
    *
@@ -75,5 +73,5 @@ public interface Predicate<T extends @Nullable Object> {
    * predicates are known <i>not</i> to be interchangeable.
    */
   @Override
-  boolean equals(@CheckForNull Object object);
+  boolean equals(@Nullable Object object);
 }

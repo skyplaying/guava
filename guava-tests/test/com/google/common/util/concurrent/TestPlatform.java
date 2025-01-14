@@ -18,7 +18,6 @@ package com.google.common.util.concurrent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.util.concurrent.FuturesTest.failureWithCause;
 import static com.google.common.util.concurrent.FuturesTest.pseudoTimedGetUninterruptibly;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -30,7 +29,7 @@ import com.google.common.annotations.GwtCompatible;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
-import junit.framework.AssertionFailedError;
+import org.jspecify.annotations.Nullable;
 
 /** Methods factored out so that they can be emulated differently in GWT. */
 @GwtCompatible(emulated = true)
@@ -42,7 +41,7 @@ final class TestPlatform {
       fail();
     } catch (TimeoutException expected) {
     } catch (ExecutionException e) {
-      throw failureWithCause(e, "");
+      throw new AssertionError(e);
     }
   }
 
@@ -52,7 +51,7 @@ final class TestPlatform {
       fail();
     } catch (TimeoutException expected) {
     } catch (ExecutionException e) {
-      throw failureWithCause(e, "");
+      throw new AssertionError(e);
     }
   }
 
@@ -68,14 +67,13 @@ final class TestPlatform {
    * Retrieves the result of a {@code Future} known to be done but uses the {@code get(long,
    * TimeUnit)} overload in order to test that method.
    */
-  static <V> V getDoneFromTimeoutOverload(Future<V> future) throws ExecutionException {
+  static <V extends @Nullable Object> V getDoneFromTimeoutOverload(Future<V> future)
+      throws ExecutionException {
     checkState(future.isDone(), "Future was expected to be done: %s", future);
     try {
       return getUninterruptibly(future, 0, SECONDS);
     } catch (TimeoutException e) {
-      AssertionFailedError error = new AssertionFailedError(e.getMessage());
-      error.initCause(e);
-      throw error;
+      throw new AssertionError(e);
     }
   }
 

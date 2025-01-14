@@ -18,6 +18,7 @@ package com.google.common.util.concurrent;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.testing.NullPointerTester;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link AtomicLongMap}.
@@ -33,12 +35,14 @@ import junit.framework.TestCase;
  * @author mike nonemacher
  */
 @GwtCompatible(emulated = true)
+@NullUnmarked
 public class AtomicLongMapTest extends TestCase {
   private static final int ITERATIONS = 100;
   private static final int MAX_ADDEND = 100;
 
   private final Random random = new Random(301);
 
+  @J2ktIncompatible
   @GwtIncompatible // NullPointerTester
   public void testNulls() {
     NullPointerTester tester = new NullPointerTester();

@@ -24,8 +24,9 @@ import static com.google.common.graph.Graphs.checkNonNegative;
 import static com.google.common.graph.Graphs.checkPositive;
 import static java.util.Objects.requireNonNull;
 
+import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Standard implementation of {@link MutableValueGraph} that supports both directed and undirected
@@ -40,7 +41,6 @@ import javax.annotation.CheckForNull;
  * @param <N> Node parameter type
  * @param <V> Value parameter type
  */
-@ElementTypesAreNonnullByDefault
 final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
     implements MutableValueGraph<N, V> {
 
@@ -84,8 +84,7 @@ final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
 
   @Override
   @CanIgnoreReturnValue
-  @CheckForNull
-  public V putEdgeValue(N nodeU, N nodeV, V value) {
+  public @Nullable V putEdgeValue(N nodeU, N nodeV, V value) {
     checkNotNull(nodeU, "nodeU");
     checkNotNull(nodeV, "nodeV");
     checkNotNull(value, "value");
@@ -112,8 +111,7 @@ final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
 
   @Override
   @CanIgnoreReturnValue
-  @CheckForNull
-  public V putEdgeValue(EndpointPair<N> endpoints, V value) {
+  public @Nullable V putEdgeValue(EndpointPair<N> endpoints, V value) {
     validateEndpoints(endpoints);
     return putEdgeValue(endpoints.nodeU(), endpoints.nodeV(), value);
   }
@@ -136,17 +134,21 @@ final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
       }
     }
 
-    for (N successor : connections.successors()) {
+    for (N successor : ImmutableList.copyOf(connections.successors())) {
       // requireNonNull is safe because the node is a successor.
       requireNonNull(nodeConnections.getWithoutCaching(successor)).removePredecessor(node);
+      requireNonNull(connections.removeSuccessor(successor));
       --edgeCount;
     }
     if (isDirected()) { // In undirected graphs, the successor and predecessor sets are equal.
-      for (N predecessor : connections.predecessors()) {
+      // Since views are returned, we need to copy the predecessors that will be removed.
+      // Thus we avoid modifying the underlying view while iterating over it.
+      for (N predecessor : ImmutableList.copyOf(connections.predecessors())) {
         // requireNonNull is safe because the node is a predecessor.
         checkState(
             requireNonNull(nodeConnections.getWithoutCaching(predecessor)).removeSuccessor(node)
                 != null);
+        connections.removePredecessor(predecessor);
         --edgeCount;
       }
     }
@@ -157,8 +159,7 @@ final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
 
   @Override
   @CanIgnoreReturnValue
-  @CheckForNull
-  public V removeEdge(N nodeU, N nodeV) {
+  public @Nullable V removeEdge(N nodeU, N nodeV) {
     checkNotNull(nodeU, "nodeU");
     checkNotNull(nodeV, "nodeV");
 
@@ -178,8 +179,7 @@ final class StandardMutableValueGraph<N, V> extends StandardValueGraph<N, V>
 
   @Override
   @CanIgnoreReturnValue
-  @CheckForNull
-  public V removeEdge(EndpointPair<N> endpoints) {
+  public @Nullable V removeEdge(EndpointPair<N> endpoints) {
     validateEndpoints(endpoints);
     return removeEdge(endpoints.nodeU(), endpoints.nodeV());
   }

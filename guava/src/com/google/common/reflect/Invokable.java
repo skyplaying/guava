@@ -30,8 +30,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wrapper around either a {@link Method} or a {@link Constructor}. Convenience API is provided to
@@ -62,7 +61,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 14.0 (no longer implements {@link AccessibleObject} or {@code GenericDeclaration} since
  *     31.0)
  */
-@ElementTypesAreNonnullByDefault
 public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   private final AccessibleObject accessibleObject;
   private final Member member;
@@ -89,8 +87,7 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   }
 
   @Override
-  @CheckForNull
-  public final <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
+  public final <A extends Annotation> @Nullable A getAnnotation(Class<A> annotationClass) {
     return accessibleObject.getAnnotation(annotationClass);
   }
 
@@ -117,13 +114,14 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   }
 
   /** See {@link java.lang.reflect.AccessibleObject#trySetAccessible()}. */
+  @SuppressWarnings("CatchingUnchecked") // sneaky checked exception
   public final boolean trySetAccessible() {
     // We can't call accessibleObject.trySetAccessible since that was added in Java 9 and this code
     // should work on Java 8. So we emulate it this way.
     try {
       accessibleObject.setAccessible(true);
       return true;
-    } catch (RuntimeException e) {
+    } catch (Exception e) { // sneaky checked exception
       return false;
     }
   }
@@ -210,7 +208,7 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   }
 
   @Override
-  public boolean equals(@CheckForNull Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (obj instanceof Invokable) {
       Invokable<?, ?> that = (Invokable<?, ?>) obj;
       return getOwnerType().equals(that.getOwnerType()) && member.equals(that.member);
@@ -253,8 +251,7 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   // All subclasses are owned by us and we'll make sure to get the R type right, including nullness.
   @SuppressWarnings({"unchecked", "nullness"})
   @CanIgnoreReturnValue
-  @CheckForNull
-  public final R invoke(@CheckForNull T receiver, @Nullable Object... args)
+  public final @Nullable R invoke(@Nullable T receiver, @Nullable Object... args)
       throws InvocationTargetException, IllegalAccessException {
     return (R) invokeInternal(receiver, checkNotNull(args));
   }
@@ -335,14 +332,12 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
     return (TypeToken<T>) TypeToken.of(getDeclaringClass());
   }
 
-  @CheckForNull
-  abstract Object invokeInternal(@CheckForNull Object receiver, @Nullable Object[] args)
+  abstract @Nullable Object invokeInternal(@Nullable Object receiver, @Nullable Object[] args)
       throws InvocationTargetException, IllegalAccessException;
 
   abstract Type[] getGenericParameterTypes();
 
-  @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker"})
-  @IgnoreJRERequirement
+  @SuppressWarnings("Java7ApiChecker")
   abstract AnnotatedType[] getAnnotatedParameterTypes();
 
   /** This should never return a type that's not a subtype of Throwable. */
@@ -355,12 +350,9 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
   /**
    * Returns the {@link AnnotatedType} for the return type.
    *
-   * <p>This method will fail if run under an Android VM.
-   *
-   * @since 14.0 for guava-jre (available since 32.0.0 in guava-android)
+   * @since 14.0
    */
-  @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker"})
-  @IgnoreJRERequirement
+  @SuppressWarnings("Java7ApiChecker")
   public abstract AnnotatedType getAnnotatedReturnType();
 
   static class MethodInvokable<T> extends Invokable<T, Object> {
@@ -373,8 +365,7 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
     }
 
     @Override
-    @CheckForNull
-    final Object invokeInternal(@CheckForNull Object receiver, @Nullable Object[] args)
+    final @Nullable Object invokeInternal(@Nullable Object receiver, @Nullable Object[] args)
         throws InvocationTargetException, IllegalAccessException {
       return method.invoke(receiver, args);
     }
@@ -390,15 +381,13 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
     }
 
     @Override
-    @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker"})
-    @IgnoreJRERequirement
+    @SuppressWarnings("Java7ApiChecker")
     AnnotatedType[] getAnnotatedParameterTypes() {
       return method.getAnnotatedParameterTypes();
     }
 
     @Override
-    @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker", "DoNotCall"})
-    @IgnoreJRERequirement
+    @SuppressWarnings("Java7ApiChecker")
     public AnnotatedType getAnnotatedReturnType() {
       return method.getAnnotatedReturnType();
     }
@@ -442,7 +431,7 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
     }
 
     @Override
-    final Object invokeInternal(@CheckForNull Object receiver, @Nullable Object[] args)
+    final Object invokeInternal(@Nullable Object receiver, @Nullable Object[] args)
         throws InvocationTargetException, IllegalAccessException {
       try {
         return constructor.newInstance(args);
@@ -481,15 +470,13 @@ public abstract class Invokable<T, R> implements AnnotatedElement, Member {
     }
 
     @Override
-    @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker"})
-    @IgnoreJRERequirement
+    @SuppressWarnings("Java7ApiChecker")
     AnnotatedType[] getAnnotatedParameterTypes() {
       return constructor.getAnnotatedParameterTypes();
     }
 
     @Override
-    @SuppressWarnings({"Java7ApiChecker", "AndroidJdkLibsChecker", "DoNotCall"})
-    @IgnoreJRERequirement
+    @SuppressWarnings("Java7ApiChecker")
     public AnnotatedType getAnnotatedReturnType() {
       return constructor.getAnnotatedReturnType();
     }

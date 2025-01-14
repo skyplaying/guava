@@ -13,7 +13,8 @@
  */
 
 /**
- * This package contains caching utilities.
+ * {@linkplain CacheBuilder Discouraged} (in favor of <a
+ * href="https://github.com/ben-manes/caffeine/wiki">Caffeine</a>) caching utilities.
  *
  * <p>The core interface used to represent caches is {@link Cache}. In-memory caches can be
  * configured and created using {@link CacheBuilder}, with cache entries being loaded by {@link
@@ -28,8 +29,8 @@
  * @author Charles Fry
  */
 @CheckReturnValue
-@ParametersAreNonnullByDefault
+@NullMarked
 package com.google.common.cache;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;

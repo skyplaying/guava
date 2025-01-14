@@ -20,6 +20,7 @@ import static com.google.common.collect.MapMakerInternalMap.Strength.STRONG;
 import static com.google.common.collect.MapMakerInternalMap.Strength.WEAK;
 import static com.google.common.testing.SerializableTester.reserializeAndAssert;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -39,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Test case for {@link ConcurrentHashMultiset}.
@@ -46,6 +48,7 @@ import junit.framework.TestSuite;
  * @author Cliff L. Biffle
  * @author mike nonemacher
  */
+@NullUnmarked
 public class ConcurrentHashMultisetTest extends TestCase {
 
   public static Test suite() {
@@ -159,11 +162,7 @@ public class ConcurrentHashMultisetTest extends TestCase {
 
     when(backingMap.get(KEY)).thenReturn(new AtomicInteger(INITIAL_COUNT));
 
-    try {
-      multiset.add(KEY, COUNT_TO_ADD);
-      fail("Must reject arguments that would cause counter overflow.");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> multiset.add(KEY, COUNT_TO_ADD));
   }
 
   /**
@@ -246,11 +245,7 @@ public class ConcurrentHashMultisetTest extends TestCase {
     cms.add("a", 2);
     cms.add("b", 3);
 
-    try {
-      cms.removeExactly("a", -2);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> cms.removeExactly("a", -2));
 
     assertTrue(cms.removeExactly("a", 0));
     assertEquals(2, cms.count("a"));

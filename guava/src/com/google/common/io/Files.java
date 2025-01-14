@@ -55,8 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides utility methods for working with {@linkplain File files}.
@@ -70,7 +69,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class Files {
 
   private Files() {}
@@ -424,10 +422,10 @@ public final class Files {
    *     context.getCacheDir()}), and create your own directory under that. (For example, you might
    *     use {@code new File(context.getCacheDir(), "directoryname").mkdir()}, or, if you need an
    *     arbitrary number of temporary directories, you might have to generate multiple directory
-   *     names in a loop until {@code mkdir()} returns {@code true}.) For developers on Java 7 or
-   *     later, use {@link java.nio.file.Files#createTempDirectory}, transforming it to a {@link
-   *     File} using {@link java.nio.file.Path#toFile() toFile()} if needed. To restrict permissions
-   *     as this method does, pass {@code
+   *     names in a loop until {@code mkdir()} returns {@code true}.) For JRE users, prefer {@link
+   *     java.nio.file.Files#createTempDirectory}, transforming it to a {@link File} using {@link
+   *     java.nio.file.Path#toFile() toFile()} if needed. To restrict permissions as this method
+   *     does, pass {@code
    *     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"))} to your
    *     call to {@code createTempDirectory}.
    */
@@ -523,9 +521,8 @@ public final class Files {
   @InlineMe(
       replacement = "Files.asCharSource(file, charset).readFirstLine()",
       imports = "com.google.common.io.Files")
-  @CheckForNull
   public
-  static String readFirstLine(File file, Charset charset) throws IOException {
+  static @Nullable String readFirstLine(File file, Charset charset) throws IOException {
     return asCharSource(file, charset).readFirstLine();
   }
 
@@ -791,7 +788,9 @@ public final class Files {
    * behavior that the {@link File} API does not already account for. For example, on NTFS it will
    * report {@code "txt"} as the extension for the filename {@code "foo.exe:.txt"} even though NTFS
    * will drop the {@code ":.txt"} part of the name when the file is actually created on the
-   * filesystem due to NTFS's <a href="https://goo.gl/vTpJi4">Alternate Data Streams</a>.
+   * filesystem due to NTFS's <a
+   * href="https://learn.microsoft.com/en-us/archive/blogs/askcore/alternate-data-streams-in-ntfs">Alternate
+   * Data Streams</a>.
    *
    * @since 11.0
    */

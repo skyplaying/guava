@@ -31,7 +31,8 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Generates a dummy interface proxy that simply returns a dummy value for each method.
@@ -40,7 +41,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @GwtIncompatible
 @J2ktIncompatible
-@ElementTypesAreNonnullByDefault
+@NullMarked
 abstract class DummyProxy {
 
   /**
@@ -73,7 +74,8 @@ abstract class DummyProxy {
     }
 
     @Override
-    protected @Nullable Object handleInvocation(Object proxy, Method method, Object[] args) {
+    protected @Nullable Object handleInvocation(
+        Object proxy, Method method, @Nullable Object[] args) {
       Invokable<?, ?> invokable = interfaceType.method(method);
       ImmutableList<Parameter> params = invokable.getParameters();
       for (int i = 0; i < args.length; i++) {

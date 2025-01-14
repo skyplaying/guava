@@ -16,13 +16,19 @@
 
 package com.google.common.collect;
 
-import java.util.Set;
+import static java.lang.Math.log;
 
+import com.google.common.annotations.GwtIncompatible;
+import java.util.Set;
+import org.jspecify.annotations.NullUnmarked;
+
+@GwtIncompatible
+@NullUnmarked
 public class CompactLinkedHashSetFloodingTest extends AbstractHashFloodingTest<Set<Object>> {
   public CompactLinkedHashSetFloodingTest() {
     super(
         ImmutableList.of(Construction.setFromElements(CompactLinkedHashSet::create)),
-        n -> n * Math.log(n),
+        n -> n * log(n),
         ImmutableList.of(QueryOp.SET_CONTAINS));
   }
 }

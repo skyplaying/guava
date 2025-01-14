@@ -18,6 +18,8 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * GWT emulation of {@link SingletonImmutableSet}.
  *
@@ -47,7 +49,7 @@ final class SingletonImmutableSet<E> extends ImmutableSet<E> {
   }
 
   @Override
-  public boolean contains(Object object) {
+  public boolean contains(@Nullable Object object) {
     return element.equals(object);
   }
 }

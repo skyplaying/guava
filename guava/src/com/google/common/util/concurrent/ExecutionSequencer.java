@@ -26,12 +26,12 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.J2ktIncompatible;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Serializes execution of tasks, somewhat like an "asynchronous {@code synchronized} block." Each
@@ -85,7 +85,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * @since 26.0
  */
-@ElementTypesAreNonnullByDefault
 @J2ktIncompatible
 public final class ExecutionSequencer {
 
@@ -100,7 +99,7 @@ public final class ExecutionSequencer {
   private final AtomicReference<ListenableFuture<@Nullable Void>> ref =
       new AtomicReference<>(immediateVoidFuture());
 
-  private ThreadConfinedTaskQueue latestTaskQueue = new ThreadConfinedTaskQueue();
+  private @LazyInit ThreadConfinedTaskQueue latestTaskQueue = new ThreadConfinedTaskQueue();
 
   /**
    * This object is unsafely published, but avoids problematic races by relying exclusively on the
@@ -131,11 +130,13 @@ public final class ExecutionSequencer {
      * All the states where thread != currentThread are identical for our purposes, and so even
      * though it's racy, we don't care which of those values we get, so no need to synchronize.
      */
-    @CheckForNull Thread thread;
+    @LazyInit @Nullable Thread thread;
+
     /** Only used by the thread associated with this object */
-    @CheckForNull Runnable nextTask;
+    @Nullable Runnable nextTask;
+
     /** Only used by the thread associated with this object */
-    @CheckForNull Executor nextExecutor;
+    @Nullable Executor nextExecutor;
   }
 
   /**
@@ -293,22 +294,22 @@ public final class ExecutionSequencer {
      * Used to update and read the latestTaskQueue field. Set to null once the runnable has been run
      * or queued.
      */
-    @CheckForNull ExecutionSequencer sequencer;
+    @Nullable ExecutionSequencer sequencer;
 
     /**
      * Executor the task was set to run on. Set to null when the task has been queued, run, or
      * cancelled.
      */
-    @CheckForNull Executor delegate;
+    @Nullable Executor delegate;
 
     /**
      * Set before calling delegate.execute(); set to null once run, so that it can be GCed; this
      * object may live on after, if submitAsync returns an incomplete future.
      */
-    @CheckForNull Runnable task;
+    @Nullable Runnable task;
 
     /** Thread that called execute(). Set in execute, cleared when delegate.execute() returns. */
-    @CheckForNull Thread submitting;
+    @LazyInit @Nullable Thread submitting;
 
     private TaskNonReentrantExecutor(Executor delegate, ExecutionSequencer sequencer) {
       super(NOT_RUN);

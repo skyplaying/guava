@@ -17,6 +17,7 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.testing.NullPointerTester;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -24,6 +25,7 @@ import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for ThreadFactoryBuilder.
@@ -31,6 +33,7 @@ import junit.framework.TestCase;
  * @author Kurt Alfred Kluever
  * @author Martin Buchholz
  */
+@NullUnmarked
 public class ThreadFactoryBuilderTest extends TestCase {
   private final Runnable monitoredRunnable =
       new Runnable() {
@@ -129,19 +132,13 @@ public class ThreadFactoryBuilderTest extends TestCase {
   }
 
   public void testPriority_tooLow() {
-    try {
-      builder.setPriority(Thread.MIN_PRIORITY - 1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class, () -> builder.setPriority(Thread.MIN_PRIORITY - 1));
   }
 
   public void testPriority_tooHigh() {
-    try {
-      builder.setPriority(Thread.MAX_PRIORITY + 1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class, () -> builder.setPriority(Thread.MAX_PRIORITY + 1));
   }
 
   public void testUncaughtExceptionHandler_custom() {

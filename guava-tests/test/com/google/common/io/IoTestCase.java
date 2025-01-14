@@ -16,7 +16,6 @@
 
 package com.google.common.io;
 
-import com.google.common.collect.Sets;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,11 +23,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base test case class for I/O tests.
@@ -36,6 +37,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Chris Nokleberg
  * @author Colin Decker
  */
+@NullUnmarked
 public abstract class IoTestCase extends TestCase {
 
   private static final Logger logger = Logger.getLogger(IoTestCase.class.getName());
@@ -51,7 +53,7 @@ public abstract class IoTestCase extends TestCase {
   private File testDir;
   private File tempDir;
 
-  private final Set<File> filesToDelete = Sets.newHashSet();
+  private final Set<File> filesToDelete = new HashSet<>();
 
   @Override
   protected void tearDown() {

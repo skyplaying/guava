@@ -16,7 +16,8 @@
 
 package com.google.common.io;
 
-import com.google.common.base.Charsets;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -30,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map.Entry;
 import junit.framework.TestSuite;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * A generator of {@code TestSuite} instances for testing {@code CharSource} implementations.
@@ -39,6 +41,7 @@ import junit.framework.TestSuite;
  * @author Colin Decker
  */
 @AndroidIncompatible // TODO(b/230620681): Make this available (even though we won't run it).
+@NullUnmarked
 public class CharSourceTester extends SourceSinkTester<CharSource, String, CharSourceFactory> {
 
   private static final ImmutableList<Method> testMethods = getTestMethods(CharSourceTester.class);
@@ -48,8 +51,7 @@ public class CharSourceTester extends SourceSinkTester<CharSource, String, CharS
     for (Entry<String, String> entry : TEST_STRINGS.entrySet()) {
       if (testAsByteSource) {
         suite.addTest(
-            suiteForBytes(
-                factory, entry.getValue().getBytes(Charsets.UTF_8), name, entry.getKey(), true));
+            suiteForBytes(factory, entry.getValue().getBytes(UTF_8), name, entry.getKey(), true));
       } else {
         suite.addTest(suiteForString(factory, entry.getValue(), name, entry.getKey()));
       }
@@ -59,7 +61,7 @@ public class CharSourceTester extends SourceSinkTester<CharSource, String, CharS
 
   static TestSuite suiteForBytes(
       CharSourceFactory factory, byte[] bytes, String name, String desc, boolean slice) {
-    TestSuite suite = suiteForString(factory, new String(bytes, Charsets.UTF_8), name, desc);
+    TestSuite suite = suiteForString(factory, new String(bytes, UTF_8), name, desc);
     ByteSourceFactory byteSourceFactory = SourceSinkFactories.asByteSourceFactory(factory);
     suite.addTest(
         ByteSourceTester.suiteForBytes(

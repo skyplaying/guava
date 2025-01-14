@@ -25,12 +25,14 @@ import com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.List;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for the HttpHeaders class.
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class HttpHeadersTest extends TestCase {
 
   public void testConstantNameMatchesString() throws Exception {
@@ -51,8 +53,8 @@ public class HttpHeadersTest extends TestCase {
             .buildOrThrow();
     ImmutableSet<String> uppercaseAcronyms =
         ImmutableSet.of(
-            "CH", "ID", "DNT", "DNS", "DPR", "ECT", "HTTP2", "IP", "MD5", "P3P", "RTT", "TE", "UA",
-            "UID", "URL", "WWW", "XSS");
+            "CH", "ID", "DNT", "DNS", "DPR", "ECT", "GPC", "HTTP2", "IP", "MD5", "P3P", "RTT", "TE",
+            "UA", "UID", "URL", "WWW", "XSS");
     assertConstantNameMatchesString(HttpHeaders.class, specialCases, uppercaseAcronyms);
   }
 

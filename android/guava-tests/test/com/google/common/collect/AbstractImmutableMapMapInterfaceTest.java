@@ -16,14 +16,18 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Sets.newHashSet;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.base.Joiner;
 import com.google.common.collect.testing.MapInterfaceTest;
 import com.google.common.collect.testing.MinimalSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.jspecify.annotations.NullUnmarked;
 
 @GwtCompatible
+@NullUnmarked
 abstract class AbstractImmutableMapMapInterfaceTest<K, V> extends MapInterfaceTest<K, V> {
   AbstractImmutableMapMapInterfaceTest() {
     super(false, false, false, false, false);
@@ -49,6 +53,6 @@ abstract class AbstractImmutableMapMapInterfaceTest<K, V> extends MapInterfaceTe
     assertEquals("[" + JOINER.join(map.values()) + "]", map.values().toString());
 
     assertEquals(MinimalSet.from(map.entrySet()), map.entrySet());
-    assertEquals(Sets.newHashSet(map.keySet()), map.keySet());
+    assertEquals(newHashSet(map.keySet()), map.keySet());
   }
 }

@@ -29,9 +29,13 @@ import com.google.common.testing.NullPointerTester;
 import java.lang.ref.Reference;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
-/** @author Charles Fry */
+/**
+ * @author Charles Fry
+ */
 @SuppressWarnings("deprecation") // many tests of deprecated methods
+@NullUnmarked
 public class MapMakerInternalMapTest extends TestCase {
 
   static final int SMALL_MAX_SIZE = DRAIN_THRESHOLD * 5;
@@ -841,7 +845,6 @@ public class MapMakerInternalMapTest extends TestCase {
         Object valueTwo = new Object();
 
         map.put(keyOne, valueOne);
-        @SuppressWarnings("unchecked")
         WeakValueEntry<Object, Object, ?> entry =
             (WeakValueEntry<Object, Object, ?>) segment.getEntry(keyOne, hashOne);
         WeakValueReference<Object, Object, ?> valueReference = entry.getValueReference();
@@ -902,7 +905,6 @@ public class MapMakerInternalMapTest extends TestCase {
         Object keyTwo = new Object();
 
         map.put(keyOne, valueOne);
-        @SuppressWarnings("unchecked")
         WeakValueEntry<Object, Object, ?> entry =
             (WeakValueEntry<Object, Object, ?>) segment.getEntry(keyOne, hashOne);
         WeakValueReference<Object, Object, ?> valueReference = entry.getValueReference();

@@ -17,7 +17,7 @@
 package com.google.common.collect;
 
 import java.util.Collection;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A GWT-only class only used by GWT emulations. It is used to consolidate the definitions of method
@@ -64,7 +64,7 @@ class ForwardingImmutableCollection<E> extends ImmutableCollection<E> {
   }
 
   @Override
-  public <T> T[] toArray(T[] other) {
+  public <T extends @Nullable Object> T[] toArray(T[] other) {
     return delegate.toArray(other);
   }
 

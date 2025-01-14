@@ -16,8 +16,9 @@
 
 package com.google.common.hash;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.io.BaseEncoding.base16;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
@@ -29,7 +30,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
 
@@ -38,6 +40,7 @@ import sun.security.jca.Providers;
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class MacHashFunctionTest extends TestCase {
 
   private static final ImmutableSet<String> INPUTS = ImmutableSet.of("", "Z", "foobar");
@@ -58,7 +61,7 @@ public class MacHashFunctionTest extends TestCase {
           .put("HmacSHA1", SHA1_KEY, Hashing.hmacSha1(SHA1_KEY))
           .put("HmacSHA256", SHA256_KEY, Hashing.hmacSha256(SHA256_KEY))
           .put("HmacSHA512", SHA512_KEY, Hashing.hmacSha512(SHA512_KEY))
-          .build();
+          .buildOrThrow();
 
   public void testNulls() {
     NullPointerTester tester =
@@ -225,11 +228,7 @@ public class MacHashFunctionTest extends TestCase {
     assertEquals(
         "9753980fe94daa8ecaa82216519393a9",
         hasher.putString("The quick brown fox jumps over the lazy dog", UTF_8).hash().toString());
-    try {
-      hasher.putInt(42);
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> hasher.putInt(42));
   }
 
   public void testHashTwice() {
@@ -238,11 +237,7 @@ public class MacHashFunctionTest extends TestCase {
     assertEquals(
         "9753980fe94daa8ecaa82216519393a9",
         hasher.putString("The quick brown fox jumps over the lazy dog", UTF_8).hash().toString());
-    try {
-      hasher.hash();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> hasher.hash());
   }
 
   public void testToString() {

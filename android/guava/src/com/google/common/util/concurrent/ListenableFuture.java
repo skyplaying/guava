@@ -18,7 +18,8 @@ import com.google.errorprone.annotations.DoNotMock;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link Future} that accepts completion listeners. Each listener has an associated executor, and
@@ -36,10 +37,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  *
  * <p>The main purpose of {@code ListenableFuture} is to help you chain together a graph of
  * asynchronous operations. You can chain them together manually with calls to methods like {@link
- * Futures#transform(ListenableFuture, com.google.common.base.Function, Executor)
- * Futures.transform}, but you will often find it easier to use a framework. Frameworks automate the
- * process, often adding features like monitoring, debugging, and cancellation. Examples of
- * frameworks include:
+ * Futures#transform(ListenableFuture, com.google.common.base.Function, Executor) Futures.transform}
+ * (or {@link FluentFuture#transform(com.google.common.base.Function, Executor)
+ * FluentFuture.transform}), but you will often find it easier to use a framework. Frameworks
+ * automate the process, often adding features like monitoring, debugging, and cancellation.
+ * Examples of frameworks include:
  *
  * <ul>
  *   <li><a href="https://dagger.dev/producers.html">Dagger Producers</a>
@@ -116,7 +118,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * put in a special hack for us: https://issuetracker.google.com/issues/131431257)
  */
 @DoNotMock("Use the methods in Futures (like immediateFuture) or SettableFuture")
-@ElementTypesAreNonnullByDefault
+@NullMarked
 public interface ListenableFuture<V extends @Nullable Object> extends Future<V> {
   /**
    * Registers a listener to be {@linkplain Executor#execute(Runnable) run} on the given executor.

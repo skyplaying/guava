@@ -19,6 +19,8 @@ package com.google.common.collect;
 import static com.google.common.collect.CollectPreconditions.checkRemove;
 import static com.google.common.collect.CompactHashing.UNSET;
 import static com.google.common.collect.Hashing.smearedHash;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.GwtIncompatible;
@@ -42,8 +44,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * CompactHashSet is an implementation of a Set. All optional operations (adding and removing) are
@@ -73,7 +74,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Jon Noack
  */
 @GwtIncompatible // not worth using in GWT for now
-@ElementTypesAreNonnullByDefault
 class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implements Serializable {
   // TODO(user): cache all field accesses in local vars
 
@@ -161,7 +161,7 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
    *   <li>null, if no entries have yet been added to the map
    * </ul>
    */
-  @CheckForNull private transient Object table;
+  private transient @Nullable Object table;
 
   /**
    * Contains the logical entries, in the range of [0, size()). The high bits of each int are the
@@ -178,13 +178,13 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
    *
    * <p>The pointers in [size(), entries.length) are all "null" (UNSET).
    */
-  @CheckForNull private transient int[] entries;
+  private transient int @Nullable [] entries;
 
   /**
    * The elements contained in the set, in the range of [0, size()). The elements in [size(),
    * elements.length) are all {@code null}.
    */
-  @VisibleForTesting @CheckForNull transient @Nullable Object[] elements;
+  @VisibleForTesting transient @Nullable Object @Nullable [] elements;
 
   /**
    * Keeps track of metadata like the number of hash table bits and modifications of this data
@@ -220,7 +220,6 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
   }
 
   /** Returns whether arrays need to be allocated. */
-  @VisibleForTesting
   boolean needsAllocArrays() {
     return table == null;
   }
@@ -243,8 +242,7 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
 
   @SuppressWarnings("unchecked")
   @VisibleForTesting
-  @CheckForNull
-  Set<E> delegateOrNull() {
+  @Nullable Set<E> delegateOrNull() {
     if (table instanceof Set) {
       return (Set<E>) table;
     }
@@ -255,7 +253,6 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
     return new LinkedHashSet<>(tableSize, 1.0f);
   }
 
-  @VisibleForTesting
   @CanIgnoreReturnValue
   Set<E> convertToHashFloodingResistantImplementation() {
     Set<E> newDelegate = createHashFloodingResistantDelegate(hashTableMask() + 1);
@@ -363,8 +360,7 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
     int entriesSize = requireEntries().length;
     if (newSize > entriesSize) {
       // 1.5x but round up to nearest odd (this is optimal for memory consumption on Android)
-      int newCapacity =
-          Math.min(CompactHashing.MAX_SIZE, (entriesSize + Math.max(1, entriesSize >>> 1)) | 1);
+      int newCapacity = min(CompactHashing.MAX_SIZE, (entriesSize + max(1, entriesSize >>> 1)) | 1);
       if (newCapacity != entriesSize) {
         resizeEntries(newCapacity);
       }
@@ -418,7 +414,7 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
   }
 
   @Override
-  public boolean contains(@CheckForNull Object object) {
+  public boolean contains(@Nullable Object object) {
     if (needsAllocArrays()) {
       return false;
     }
@@ -447,7 +443,7 @@ class CompactHashSet<E extends @Nullable Object> extends AbstractSet<E> implemen
 
   @CanIgnoreReturnValue
   @Override
-  public boolean remove(@CheckForNull Object object) {
+  public boolean remove(@Nullable Object object) {
     if (needsAllocArrays()) {
       return false;
     }

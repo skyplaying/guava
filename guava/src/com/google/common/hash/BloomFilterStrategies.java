@@ -22,8 +22,8 @@ import com.google.common.primitives.Longs;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLongArray;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import java.util.concurrent.atomic.LongAdder;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Collections of strategies of generating the k * log(M) bits required for an element to be mapped
@@ -37,7 +37,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Dimitris Andreou
  * @author Kurt Alfred Kluever
  */
-@ElementTypesAreNonnullByDefault
 enum BloomFilterStrategies implements BloomFilter.Strategy {
   /**
    * See "Less Hashing, Same Performance: Building a Better Bloom Filter" by Adam Kirsch and Michael
@@ -162,7 +161,7 @@ enum BloomFilterStrategies implements BloomFilter.Strategy {
   static final class LockFreeBitArray {
     private static final int LONG_ADDRESSABLE_BITS = 6;
     final AtomicLongArray data;
-    private final LongAddable bitCount;
+    private final LongAdder bitCount;
 
     LockFreeBitArray(long bits) {
       checkArgument(bits > 0, "data length is zero!");
@@ -170,14 +169,14 @@ enum BloomFilterStrategies implements BloomFilter.Strategy {
       // thus double memory usage.
       this.data =
           new AtomicLongArray(Ints.checkedCast(LongMath.divide(bits, 64, RoundingMode.CEILING)));
-      this.bitCount = LongAddables.create();
+      this.bitCount = new LongAdder();
     }
 
     // Used by serialization
     LockFreeBitArray(long[] data) {
       checkArgument(data.length > 0, "data length is zero!");
       this.data = new AtomicLongArray(data);
-      this.bitCount = LongAddables.create();
+      this.bitCount = new LongAdder();
       long bitCount = 0;
       for (long value : data) {
         bitCount += Long.bitCount(value);
@@ -296,7 +295,7 @@ enum BloomFilterStrategies implements BloomFilter.Strategy {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object o) {
+    public boolean equals(@Nullable Object o) {
       if (o instanceof LockFreeBitArray) {
         LockFreeBitArray lockFreeBitArray = (LockFreeBitArray) o;
         // TODO(lowasser): avoid allocation here

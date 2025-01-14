@@ -20,13 +20,17 @@ import static com.google.common.base.StandardSystemProperty.JAVA_COMPILER;
 import static com.google.common.base.StandardSystemProperty.JAVA_EXT_DIRS;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import com.google.common.annotations.GwtIncompatible;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link StandardSystemProperty}.
  *
  * @author Kurt Alfred Kluever
  */
+@GwtIncompatible
+@NullUnmarked
 public class StandardSystemPropertyTest extends TestCase {
 
   public void testGetKeyMatchesString() {

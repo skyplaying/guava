@@ -41,8 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The {@code CycleDetectingLockFactory} creates {@link ReentrantLock} instances and {@link
@@ -161,7 +160,6 @@ import javax.annotation.CheckForNull;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public class CycleDetectingLockFactory {
 
   /**
@@ -211,7 +209,7 @@ public class CycleDetectingLockFactory {
     WARN {
       @Override
       public void handlePotentialDeadlock(PotentialDeadlockException e) {
-        logger.log(Level.SEVERE, "Detected potential deadlock", e);
+        logger.get().log(Level.SEVERE, "Detected potential deadlock", e);
       }
     },
 
@@ -447,7 +445,7 @@ public class CycleDetectingLockFactory {
 
   //////// Implementation /////////
 
-  private static final Logger logger = Logger.getLogger(CycleDetectingLockFactory.class.getName());
+  private static final LazyLogger logger = new LazyLogger(CycleDetectingLockFactory.class);
 
   final Policy policy;
 
@@ -679,8 +677,7 @@ public class CycleDetectingLockFactory {
      * @return If a path was found, a chained {@link ExampleStackTrace} illustrating the path to the
      *     {@code lock}, or {@code null} if no path was found.
      */
-    @CheckForNull
-    private ExampleStackTrace findPathTo(LockGraphNode node, Set<LockGraphNode> seen) {
+    private @Nullable ExampleStackTrace findPathTo(LockGraphNode node, Set<LockGraphNode> seen) {
       if (!seen.add(this)) {
         return null; // Already traversed this node.
       }
@@ -711,7 +708,8 @@ public class CycleDetectingLockFactory {
    */
   private void aboutToAcquire(CycleDetectingLock lock) {
     if (!lock.isAcquiredByCurrentThread()) {
-      ArrayList<LockGraphNode> acquiredLockList = acquiredLocks.get();
+      // requireNonNull accommodates Android's @RecentlyNullable annotation on ThreadLocal.get
+      ArrayList<LockGraphNode> acquiredLockList = requireNonNull(acquiredLocks.get());
       LockGraphNode node = lock.getLockGraphNode();
       node.checkAcquiredLocks(policy, acquiredLockList);
       acquiredLockList.add(node);
@@ -725,7 +723,8 @@ public class CycleDetectingLockFactory {
    */
   private static void lockStateChanged(CycleDetectingLock lock) {
     if (!lock.isAcquiredByCurrentThread()) {
-      ArrayList<LockGraphNode> acquiredLockList = acquiredLocks.get();
+      // requireNonNull accommodates Android's @RecentlyNullable annotation on ThreadLocal.get
+      ArrayList<LockGraphNode> acquiredLockList = requireNonNull(acquiredLocks.get());
       LockGraphNode node = lock.getLockGraphNode();
       // Iterate in reverse because locks are usually locked/unlocked in a
       // LIFO order.

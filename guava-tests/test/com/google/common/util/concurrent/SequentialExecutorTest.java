@@ -19,6 +19,8 @@ package com.google.common.util.concurrent;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newSequentialExecutor;
 import static com.google.common.util.concurrent.Uninterruptibles.awaitUninterruptibly;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -33,16 +35,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests {@link SequentialExecutor}.
  *
  * @author JJ Furman
  */
+@NullUnmarked
 public class SequentialExecutorTest extends TestCase {
 
   private static class FakeExecutor implements Executor {
@@ -79,11 +82,7 @@ public class SequentialExecutorTest extends TestCase {
   }
 
   public void testConstructingWithNullExecutor_fails() {
-    try {
-      new SequentialExecutor(null);
-      fail("Should have failed with NullPointerException.");
-    } catch (NullPointerException expected) {
-    }
+    assertThrows(NullPointerException.class, () -> new SequentialExecutor(null));
   }
 
   public void testBasics() {
@@ -263,11 +262,7 @@ public class SequentialExecutorTest extends TestCase {
             numCalls.incrementAndGet();
           }
         };
-    try {
-      executor.execute(task);
-      fail();
-    } catch (RejectedExecutionException expected) {
-    }
+    assertThrows(RejectedExecutionException.class, () -> executor.execute(task));
     assertEquals(0, numCalls.get());
     reject.set(false);
     executor.execute(task);
@@ -311,10 +306,10 @@ public class SequentialExecutorTest extends TestCase {
       service.execute(barrierTask); // submit directly to the service
       // the barrier task runs after the error task so we know that the error has been observed by
       // SequentialExecutor by the time the barrier is satisfied
-      barrier.await(1, TimeUnit.SECONDS);
+      barrier.await(1, SECONDS);
       executor.execute(barrierTask);
       // timeout means the second task wasn't even tried
-      barrier.await(1, TimeUnit.SECONDS);
+      barrier.await(1, SECONDS);
     } finally {
       service.shutdown();
     }
@@ -343,19 +338,12 @@ public class SequentialExecutorTest extends TestCase {
                 executor.execute(Runnables.doNothing());
               }
             });
-    future.get(10, TimeUnit.SECONDS);
-    try {
-      executor.execute(Runnables.doNothing());
-      fail();
-    } catch (RejectedExecutionException expected) {
-    }
+    future.get(10, SECONDS);
+    assertThrows(RejectedExecutionException.class, () -> executor.execute(Runnables.doNothing()));
     latch.countDown();
-    try {
-      first.get(10, TimeUnit.SECONDS);
-      fail();
-    } catch (ExecutionException expected) {
-      assertThat(expected).hasCauseThat().isInstanceOf(RejectedExecutionException.class);
-    }
+    ExecutionException expected =
+        assertThrows(ExecutionException.class, () -> first.get(10, SECONDS));
+    assertThat(expected).hasCauseThat().isInstanceOf(RejectedExecutionException.class);
   }
 
   public void testToString() {

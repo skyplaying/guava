@@ -16,10 +16,14 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Tables.transpose;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.TableCollectionTest.RowTests;
+import org.jspecify.annotations.NullMarked;
 
 @GwtCompatible
+@NullMarked
 public class TablesTransposeRowTest extends RowTests {
   public TablesTransposeRowTest() {
     super(false, true, true, true, false);
@@ -28,6 +32,6 @@ public class TablesTransposeRowTest extends RowTests {
   @Override
   Table<Character, String, Integer> makeTable() {
     Table<String, Character, Integer> original = TreeBasedTable.create();
-    return Tables.transpose(original);
+    return transpose(original);
   }
 }

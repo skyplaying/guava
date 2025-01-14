@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit tests for {@link JdkFutureAdapters}.
@@ -40,6 +41,7 @@ import junit.framework.TestCase;
  * @author Sven Mawson
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class JdkFutureAdaptersTest extends TestCase {
   private static final String DATA1 = "data";
 
@@ -131,7 +133,7 @@ public class JdkFutureAdaptersTest extends TestCase {
             0,
             Integer.MAX_VALUE,
             60L,
-            TimeUnit.SECONDS,
+            SECONDS,
             new SynchronousQueue<Runnable>(),
             new ThreadFactoryBuilder().setDaemon(true).build()) {
           @Override

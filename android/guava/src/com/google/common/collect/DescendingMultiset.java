@@ -17,13 +17,13 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.j2objc.annotations.WeakOuter;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.Set;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A skeleton implementation of a descending multiset. Only needs {@code forwardMultiset()} and
@@ -32,12 +32,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Louis Wasserman
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 abstract class DescendingMultiset<E extends @Nullable Object> extends ForwardingMultiset<E>
     implements SortedMultiset<E> {
   abstract SortedMultiset<E> forwardMultiset();
 
-  @CheckForNull private transient Comparator<? super E> comparator;
+  @LazyInit private transient @Nullable Comparator<? super E> comparator;
 
   @Override
   public Comparator<? super E> comparator() {
@@ -48,7 +47,7 @@ abstract class DescendingMultiset<E extends @Nullable Object> extends Forwarding
     return result;
   }
 
-  @CheckForNull private transient NavigableSet<E> elementSet;
+  @LazyInit private transient @Nullable NavigableSet<E> elementSet;
 
   @Override
   public NavigableSet<E> elementSet() {
@@ -60,14 +59,12 @@ abstract class DescendingMultiset<E extends @Nullable Object> extends Forwarding
   }
 
   @Override
-  @CheckForNull
-  public Entry<E> pollFirstEntry() {
+  public @Nullable Entry<E> pollFirstEntry() {
     return forwardMultiset().pollLastEntry();
   }
 
   @Override
-  @CheckForNull
-  public Entry<E> pollLastEntry() {
+  public @Nullable Entry<E> pollLastEntry() {
     return forwardMultiset().pollFirstEntry();
   }
 
@@ -103,20 +100,18 @@ abstract class DescendingMultiset<E extends @Nullable Object> extends Forwarding
   }
 
   @Override
-  @CheckForNull
-  public Entry<E> firstEntry() {
+  public @Nullable Entry<E> firstEntry() {
     return forwardMultiset().lastEntry();
   }
 
   @Override
-  @CheckForNull
-  public Entry<E> lastEntry() {
+  public @Nullable Entry<E> lastEntry() {
     return forwardMultiset().firstEntry();
   }
 
   abstract Iterator<Entry<E>> entryIterator();
 
-  @CheckForNull private transient Set<Entry<E>> entrySet;
+  @LazyInit private transient @Nullable Set<Entry<E>> entrySet;
 
   @Override
   public Set<Entry<E>> entrySet() {

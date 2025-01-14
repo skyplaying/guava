@@ -128,8 +128,15 @@ import java.util.Map;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class Quantiles {
+  /**
+   * Constructor for a type that is not meant to be instantiated.
+   *
+   * @deprecated Use the static factory methods of the class. There is no reason to create an
+   *     instance of {@link Quantiles}.
+   */
+  @Deprecated
+  public Quantiles() {}
 
   /** Specifies the computation of a median (i.e. the 1st 2-quantile). */
   public static ScaleAndIndex median() {

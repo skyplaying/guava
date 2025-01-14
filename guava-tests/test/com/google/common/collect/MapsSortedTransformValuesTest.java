@@ -16,10 +16,13 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Maps.transformValues;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import java.util.SortedMap;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Tests for {@link Maps#transformValues(SortedMap, Function)}.
@@ -27,11 +30,11 @@ import java.util.SortedMap;
  * @author Louis Wasserman
  */
 @GwtCompatible
-public class MapsSortedTransformValuesTest extends MapsTransformValuesTest {
-
+@NullMarked
+public class MapsSortedTransformValuesTest extends AbstractMapsTransformValuesTest {
   @Override
   protected SortedMap<String, String> makeEmptyMap() {
-    return Maps.transformValues(Maps.<String, String>newTreeMap(), Functions.<String>identity());
+    return transformValues(Maps.<String, String>newTreeMap(), Functions.<String>identity());
   }
 
   @Override
@@ -40,6 +43,6 @@ public class MapsSortedTransformValuesTest extends MapsTransformValuesTest {
     underlying.put("a", 1);
     underlying.put("b", 2);
     underlying.put("c", 3);
-    return Maps.transformValues(underlying, Functions.toStringFunction());
+    return transformValues(underlying, Functions.toStringFunction());
   }
 }

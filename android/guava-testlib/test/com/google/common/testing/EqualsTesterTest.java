@@ -16,6 +16,9 @@
 
 package com.google.common.testing;
 
+import static com.google.common.testing.ReflectionFreeAssertThrows.assertThrows;
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -23,7 +26,8 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Unit tests for {@link EqualsTester}.
@@ -32,6 +36,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @GwtCompatible
 @SuppressWarnings("MissingTestCall")
+@NullUnmarked
 public class EqualsTesterTest extends TestCase {
   private ValidTestObject reference;
   private EqualsTester equalsTester;
@@ -51,29 +56,21 @@ public class EqualsTesterTest extends TestCase {
 
   /** Test null reference yields error */
   public void testAddNullReference() {
-    try {
-      equalsTester.addEqualityGroup((Object) null);
-      fail("Should fail on null reference");
-    } catch (NullPointerException e) {
-    }
+    assertThrows(NullPointerException.class, () -> equalsTester.addEqualityGroup((Object) null));
   }
 
   /** Test equalObjects after adding multiple instances at once with a null */
   public void testAddTwoEqualObjectsAtOnceWithNull() {
-    try {
-      equalsTester.addEqualityGroup(reference, equalObject1, null);
-      fail("Should fail on null equal object");
-    } catch (NullPointerException e) {
-    }
+    assertThrows(
+        NullPointerException.class,
+        () -> equalsTester.addEqualityGroup(reference, equalObject1, null));
   }
 
   /** Test adding null equal object yields error */
   public void testAddNullEqualObject() {
-    try {
-      equalsTester.addEqualityGroup(reference, (Object[]) null);
-      fail("Should fail on null equal object");
-    } catch (NullPointerException e) {
-    }
+    assertThrows(
+        NullPointerException.class,
+        () -> equalsTester.addEqualityGroup(reference, (Object[]) null));
   }
 
   /**
@@ -195,21 +192,14 @@ public class EqualsTesterTest extends TestCase {
 
   public void testNullEqualityGroup() {
     EqualsTester tester = new EqualsTester();
-    try {
-      tester.addEqualityGroup((Object[]) null);
-      fail();
-    } catch (NullPointerException e) {
-    }
+    assertThrows(NullPointerException.class, () -> tester.addEqualityGroup((Object[]) null));
   }
 
   public void testNullObjectInEqualityGroup() {
     EqualsTester tester = new EqualsTester();
-    try {
-      tester.addEqualityGroup(1, null, 3);
-      fail();
-    } catch (NullPointerException e) {
-      assertErrorMessage(e, "at index 1");
-    }
+    NullPointerException e =
+        assertThrows(NullPointerException.class, () -> tester.addEqualityGroup(1, null, 3));
+    assertErrorMessage(e, "at index 1");
   }
 
   public void testSymmetryBroken() {
@@ -274,12 +264,12 @@ public class EqualsTesterTest extends TestCase {
   }
 
   public void testEqualityBasedOnToString() {
-    try {
-      new EqualsTester().addEqualityGroup(new EqualsBasedOnToString("foo")).testEquals();
-      fail();
-    } catch (AssertionFailedError e) {
-      assertTrue(e.getMessage().contains("toString representation"));
-    }
+    AssertionFailedError e =
+        assertThrows(
+            AssertionFailedError.class,
+            () ->
+                new EqualsTester().addEqualityGroup(new EqualsBasedOnToString("foo")).testEquals());
+    assertThat(e).hasMessageThat().contains("toString representation");
   }
 
   private static void assertErrorMessage(Throwable e, String message) {

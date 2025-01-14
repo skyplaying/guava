@@ -17,6 +17,10 @@
 package com.google.common.collect;
 
 import static com.google.common.collect.Maps.immutableEntry;
+import static com.google.common.truth.Truth.assertThat;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.testing.MapTestSuiteBuilder;
 import com.google.common.collect.testing.SampleElements;
@@ -26,20 +30,21 @@ import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
 import com.google.common.testing.SerializableTester;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Unit test for {@link ImmutableClassToInstanceMap}.
  *
  * @author Kevin Bourrillion
  */
+@NullUnmarked
 public class ImmutableClassToInstanceMapTest extends TestCase {
   public static Test suite() {
     TestSuite suite = new TestSuite();
@@ -51,13 +56,13 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
                   // Other tests will verify what real, warning-free usage looks like
                   // but here we have to do some serious fudging
                   @Override
-                  @SuppressWarnings("unchecked")
+                  @SuppressWarnings({"unchecked", "rawtypes"})
                   public Map<Class, Impl> create(Object... elements) {
                     ImmutableClassToInstanceMap.Builder<Impl> builder =
                         ImmutableClassToInstanceMap.builder();
                     for (Object object : elements) {
-                      Entry<Class, Impl> entry = (Entry<Class, Impl>) object;
-                      builder.put(entry.getKey(), entry.getValue());
+                      Entry<?, ?> entry = (Entry<?, ?>) object;
+                      builder.put((Class) entry.getKey(), (Impl) entry.getValue());
                     }
                     return (Map) builder.build();
                   }
@@ -82,7 +87,7 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
   }
 
   public void testCopyOf_map_empty() {
-    Map<Class<?>, Object> in = Collections.emptyMap();
+    Map<Class<?>, Object> in = emptyMap();
     ClassToInstanceMap<Object> map = ImmutableClassToInstanceMap.copyOf(in);
     assertTrue(map.isEmpty());
     assertSame(map, ImmutableClassToInstanceMap.of());
@@ -109,30 +114,21 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
     assertEquals(0, zero);
 
     Double pi = map.getInstance(Double.class);
-    assertEquals(Math.PI, pi, 0.0);
+    assertThat(pi).isEqualTo(Math.PI);
 
     assertSame(map, ImmutableClassToInstanceMap.copyOf(map));
   }
 
   public void testCopyOf_map_nulls() {
-    Map<Class<? extends Number>, Number> nullKey = Collections.singletonMap(null, (Number) 1.0);
-    try {
-      ImmutableClassToInstanceMap.copyOf(nullKey);
-      fail();
-    } catch (NullPointerException expected) {
-    }
+    Map<Class<? extends Number>, Number> nullKey = singletonMap(null, (Number) 1.0);
+    assertThrows(NullPointerException.class, () -> ImmutableClassToInstanceMap.copyOf(nullKey));
 
-    Map<? extends Class<? extends Number>, Number> nullValue =
-        Collections.singletonMap(Number.class, null);
-    try {
-      ImmutableClassToInstanceMap.copyOf(nullValue);
-      fail();
-    } catch (NullPointerException expected) {
-    }
+    Map<? extends Class<? extends Number>, Number> nullValue = singletonMap(Number.class, null);
+    assertThrows(NullPointerException.class, () -> ImmutableClassToInstanceMap.copyOf(nullValue));
   }
 
   public void testCopyOf_imap_empty() {
-    Map<Class<?>, Object> in = Collections.emptyMap();
+    Map<Class<?>, Object> in = emptyMap();
     ClassToInstanceMap<Object> map = ImmutableClassToInstanceMap.copyOf(in);
     assertTrue(map.isEmpty());
   }
@@ -147,7 +143,7 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
     assertEquals(0, zero);
 
     Double pi = map.getInstance(Double.class);
-    assertEquals(Math.PI, pi, 0.0);
+    assertThat(pi).isEqualTo(Math.PI);
   }
 
   public void testPrimitiveAndWrapper() {
@@ -162,11 +158,12 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
     assertEquals(1, (int) ictim.getInstance(int.class));
   }
 
+  @SuppressWarnings("rawtypes") // TODO(cpovirk): Can we at least use Class<?> in some places?
   abstract static class TestClassToInstanceMapGenerator implements TestMapGenerator<Class, Impl> {
 
     @Override
-    public Class[] createKeyArray(int length) {
-      return new Class[length];
+    public Class<?>[] createKeyArray(int length) {
+      return new Class<?>[length];
     }
 
     @Override
@@ -187,7 +184,7 @@ public class ImmutableClassToInstanceMapTest extends TestCase {
     @Override
     @SuppressWarnings("unchecked")
     public Entry<Class, Impl>[] createArray(int length) {
-      return new Entry[length];
+      return (Entry<Class, Impl>[]) new Entry<?, ?>[length];
     }
 
     @Override

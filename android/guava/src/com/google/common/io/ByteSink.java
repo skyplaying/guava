@@ -48,7 +48,6 @@ import java.nio.charset.Charset;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public abstract class ByteSink {
 
   /** Constructor for use by subclasses. */
@@ -99,15 +98,8 @@ public abstract class ByteSink {
   public void write(byte[] bytes) throws IOException {
     checkNotNull(bytes);
 
-    Closer closer = Closer.create();
-    try {
-      OutputStream out = closer.register(openStream());
+    try (OutputStream out = openStream()) {
       out.write(bytes);
-      out.flush(); // https://code.google.com/p/guava-libraries/issues/detail?id=1330
-    } catch (Throwable e) {
-      throw closer.rethrow(e);
-    } finally {
-      closer.close();
     }
   }
 
@@ -122,16 +114,8 @@ public abstract class ByteSink {
   public long writeFrom(InputStream input) throws IOException {
     checkNotNull(input);
 
-    Closer closer = Closer.create();
-    try {
-      OutputStream out = closer.register(openStream());
-      long written = ByteStreams.copy(input, out);
-      out.flush(); // https://code.google.com/p/guava-libraries/issues/detail?id=1330
-      return written;
-    } catch (Throwable e) {
-      throw closer.rethrow(e);
-    } finally {
-      closer.close();
+    try (OutputStream out = openStream()) {
+      return ByteStreams.copy(input, out);
     }
   }
 

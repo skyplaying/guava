@@ -2,9 +2,9 @@
 
 package com.google.common.hash;
 
-import static com.google.common.base.Charsets.ISO_8859_1;
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSortedMap;
@@ -12,12 +12,14 @@ import com.google.common.collect.Ordering;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for Fingerprint2011.
  *
  * @author kylemaddison@google.com (Kyle Maddison)
  */
+@NullUnmarked
 public class Fingerprint2011Test extends TestCase {
 
   // Length of the sample string to produce
@@ -58,6 +60,7 @@ public class Fingerprint2011Test extends TestCase {
   private static final HashFunction HASH_FN = Hashing.fingerprint2011();
 
   // If this test fails, all bets are off
+  @SuppressWarnings("InlineMeInliner") // String.repeat unavailable under Java 8
   public void testReallySimpleFingerprints() {
     assertEquals(8473225671271759044L, fingerprint("test".getBytes(UTF_8)));
     // 32 characters long

@@ -17,20 +17,24 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transformAsync;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.Uninterruptibles.awaitUninterruptibly;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.util.concurrent.ForwardingListenableFuture.SimpleForwardingListenableFuture;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit tests for {@link Futures#transformAsync(ListenableFuture, AsyncFunction, Executor)}.
  *
  * @author Nishant Thakkar
  */
+@NullUnmarked
 public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTest<String> {
   protected static final int SLOW_OUTPUT_VALID_INPUT_DATA = 2;
   protected static final int SLOW_FUNC_VALID_INPUT_DATA = 3;
@@ -82,23 +86,13 @@ public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTe
 
   public void testFutureGetThrowsCancellationIfInputCancelled() throws Exception {
     inputFuture.cancel(true); // argument is ignored
-    try {
-      resultFuture.get();
-      fail("Result future must throw CancellationException" + " if input future is cancelled.");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> resultFuture.get());
   }
 
   public void testFutureGetThrowsCancellationIfOutputCancelled() throws Exception {
     inputFuture.set(SLOW_OUTPUT_VALID_INPUT_DATA);
     outputFuture.cancel(true); // argument is ignored
-    try {
-      resultFuture.get();
-      fail(
-          "Result future must throw CancellationException"
-              + " if function output future is cancelled.");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> resultFuture.get());
   }
 
   public void testAsyncToString() throws Exception {
@@ -111,11 +105,7 @@ public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTe
     assertTrue(resultFuture.isCancelled());
     assertTrue(inputFuture.isCancelled());
     assertFalse(outputFuture.isCancelled());
-    try {
-      resultFuture.get();
-      fail("Result future is cancelled and should have thrown a" + " CancellationException");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> resultFuture.get());
   }
 
   public void testFutureCancellableBeforeOutputCompletion() throws Exception {
@@ -124,11 +114,7 @@ public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTe
     assertTrue(resultFuture.isCancelled());
     assertFalse(inputFuture.isCancelled());
     assertTrue(outputFuture.isCancelled());
-    try {
-      resultFuture.get();
-      fail("Result future is cancelled and should have thrown a" + " CancellationException");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> resultFuture.get());
   }
 
   public void testFutureCancellableBeforeFunctionCompletion() throws Exception {
@@ -146,20 +132,10 @@ public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTe
     assertTrue(resultFuture.isCancelled());
     assertFalse(inputFuture.isCancelled());
     assertFalse(outputFuture.isCancelled());
-    try {
-      resultFuture.get();
-      fail("Result future is cancelled and should have thrown a" + " CancellationException");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> resultFuture.get());
 
     funcCompletionLatch.countDown(); // allow the function to complete
-    try {
-      outputFuture.get();
-      fail(
-          "The function output future is cancelled and should have thrown a"
-              + " CancellationException");
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> outputFuture.get());
   }
 
   public void testFutureCancelAfterCompletion() throws Exception {
@@ -172,14 +148,10 @@ public class FuturesTransformAsyncTest extends AbstractChainedListenableFutureTe
   }
 
   public void testFutureGetThrowsRuntimeException() throws Exception {
-    BadFuture badInput = new BadFuture(Futures.immediateFuture(20));
+    BadFuture badInput = new BadFuture(immediateFuture(20));
     ListenableFuture<String> chain = buildChainingFuture(badInput);
-    try {
-      chain.get();
-      fail("Future.get must throw an exception when the input future fails.");
-    } catch (ExecutionException e) {
-      assertSame(RuntimeException.class, e.getCause().getClass());
-    }
+    ExecutionException e = assertThrows(ExecutionException.class, () -> chain.get());
+    assertSame(RuntimeException.class, e.getCause().getClass());
   }
 
   /** Proxy to throw a {@link RuntimeException} out of the {@link #get()} method. */

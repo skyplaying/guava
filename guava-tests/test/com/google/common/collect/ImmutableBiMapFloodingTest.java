@@ -16,7 +16,12 @@
 
 package com.google.common.collect;
 
-import com.google.common.annotations.GwtCompatible;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Lists.transform;
+import static com.google.common.collect.Maps.immutableEntry;
+import static java.lang.Math.log;
+
+import com.google.common.annotations.GwtIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -24,8 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+import org.jspecify.annotations.NullUnmarked;
 
-@GwtCompatible
+@GwtIncompatible
+@NullUnmarked
 public class ImmutableBiMapFloodingTest extends AbstractHashFloodingTest<BiMap<Object, Object>> {
   public ImmutableBiMapFloodingTest() {
     super(
@@ -34,18 +41,12 @@ public class ImmutableBiMapFloodingTest extends AbstractHashFloodingTest<BiMap<O
                 path ->
                     Stream.<Construction<BiMap<Object, Object>>>of(
                         keys ->
-                            path.create(
-                                Lists.transform(
-                                    keys, key -> Maps.immutableEntry(key, new Object()))),
+                            path.create(transform(keys, key -> immutableEntry(key, new Object()))),
                         keys ->
-                            path.create(
-                                Lists.transform(
-                                    keys, key -> Maps.immutableEntry(new Object(), key))),
-                        keys ->
-                            path.create(
-                                Lists.transform(keys, key -> Maps.immutableEntry(key, key)))))
-            .collect(ImmutableList.toImmutableList()),
-        n -> n * Math.log(n),
+                            path.create(transform(keys, key -> immutableEntry(new Object(), key))),
+                        keys -> path.create(transform(keys, key -> immutableEntry(key, key)))))
+            .collect(toImmutableList()),
+        n -> n * log(n),
         ImmutableList.of(
             QueryOp.create("BiMap.get", BiMap::get, Math::log),
             QueryOp.create("BiMap.inverse.get", (bm, o) -> bm.inverse().get(o), Math::log)));

@@ -18,13 +18,14 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Maps.transformValues;
 import static com.google.common.collect.testing.Helpers.mapEntry;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.sort;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps.EntryTransformer;
-import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.MapTestSuiteBuilder;
 import com.google.common.collect.testing.NavigableMapTestSuiteBuilder;
 import com.google.common.collect.testing.SafeTreeMap;
@@ -39,7 +40,6 @@ import com.google.common.collect.testing.features.MapFeature;
 import com.google.common.collect.testing.google.BiMapTestSuiteBuilder;
 import com.google.common.collect.testing.google.TestStringBiMapGenerator;
 import com.google.common.io.BaseEncoding;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,13 +52,15 @@ import java.util.SortedSet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Test suites for wrappers in {@code Maps}.
  *
  * @author Louis Wasserman
  */
+@NullUnmarked
 public class MapsCollectionTest extends TestCase {
   public static Test suite() {
     TestSuite suite = new TestSuite();
@@ -133,7 +135,7 @@ public class MapsCollectionTest extends TestCase {
                   @SuppressWarnings("unchecked")
                   @Override
                   public Entry<String, Integer>[] createArray(int length) {
-                    return new Entry[length];
+                    return (Entry<String, Integer>[]) new Entry<?, ?>[length];
                   }
 
                   @Override
@@ -202,13 +204,13 @@ public class MapsCollectionTest extends TestCase {
                   @SuppressWarnings("unchecked")
                   @Override
                   public Entry<String, Integer>[] createArray(int length) {
-                    return new Entry[length];
+                    return (Entry<String, Integer>[]) new Entry<?, ?>[length];
                   }
 
                   @Override
                   public Iterable<Entry<String, Integer>> order(
                       List<Entry<String, Integer>> insertionOrder) {
-                    Collections.sort(
+                    sort(
                         insertionOrder,
                         new Comparator<Entry<String, Integer>>() {
                           @Override
@@ -269,13 +271,13 @@ public class MapsCollectionTest extends TestCase {
                   @SuppressWarnings("unchecked")
                   @Override
                   public Entry<String, Integer>[] createArray(int length) {
-                    return new Entry[length];
+                    return (Entry<String, Integer>[]) new Entry<?, ?>[length];
                   }
 
                   @Override
                   public Iterable<Entry<String, Integer>> order(
                       List<Entry<String, Integer>> insertionOrder) {
-                    Collections.sort(
+                    sort(
                         insertionOrder,
                         new Comparator<Entry<String, Integer>>() {
                           @Override
@@ -578,8 +580,8 @@ public class MapsCollectionTest extends TestCase {
       new Predicate<Entry<String, String>>() {
         @Override
         public boolean apply(Entry<String, String> entry) {
-          return !Helpers.mapEntry("banana", "toast").equals(entry)
-              && !Helpers.mapEntry("eggplant", "spam").equals(entry);
+          return !mapEntry("banana", "toast").equals(entry)
+              && !mapEntry("eggplant", "spam").equals(entry);
         }
       };
 
@@ -587,7 +589,7 @@ public class MapsCollectionTest extends TestCase {
       new Predicate<Entry<String, String>>() {
         @Override
         public boolean apply(Entry<String, String> entry) {
-          return !Helpers.mapEntry("banana", "toast").equals(entry);
+          return !mapEntry("banana", "toast").equals(entry);
         }
       };
 
@@ -595,7 +597,7 @@ public class MapsCollectionTest extends TestCase {
       new Predicate<Entry<String, String>>() {
         @Override
         public boolean apply(Entry<String, String> entry) {
-          return !Helpers.mapEntry("eggplant", "spam").equals(entry);
+          return !mapEntry("eggplant", "spam").equals(entry);
         }
       };
 
@@ -631,14 +633,14 @@ public class MapsCollectionTest extends TestCase {
   }
 
   private static String encode(String str) {
-    return BaseEncoding.base64().encode(str.getBytes(Charsets.UTF_8));
+    return BaseEncoding.base64().encode(str.getBytes(UTF_8));
   }
 
   private static final Function<String, String> DECODE_FUNCTION =
       new Function<String, String>() {
         @Override
         public String apply(String input) {
-          return new String(BaseEncoding.base64().decode(input), Charsets.UTF_8);
+          return new String(BaseEncoding.base64().decode(input), UTF_8);
         }
       };
 
@@ -669,7 +671,7 @@ public class MapsCollectionTest extends TestCase {
                     for (Entry<String, String> entry : entries) {
                       map.put(entry.getKey(), encode(entry.getValue()));
                     }
-                    return Maps.transformValues(map, DECODE_FUNCTION);
+                    return transformValues(map, DECODE_FUNCTION);
                   }
                 })
             .named("Maps.transformValues[Map, Function]")
@@ -716,7 +718,7 @@ public class MapsCollectionTest extends TestCase {
                     for (Entry<String, String> entry : entries) {
                       map.put(entry.getKey(), encode(entry.getValue()));
                     }
-                    return Maps.transformValues(map, DECODE_FUNCTION);
+                    return transformValues(map, DECODE_FUNCTION);
                   }
                 })
             .named("Maps.transformValues[SortedMap, Function]")
@@ -759,7 +761,7 @@ public class MapsCollectionTest extends TestCase {
                     for (Entry<String, String> entry : entries) {
                       map.put(entry.getKey(), encode(entry.getValue()));
                     }
-                    return Maps.transformValues(map, DECODE_FUNCTION);
+                    return transformValues(map, DECODE_FUNCTION);
                   }
                 })
             .named("Maps.transformValues[NavigableMap, Function]")

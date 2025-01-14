@@ -19,10 +19,12 @@ package com.google.common.util.concurrent;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Callables.returning;
 import static com.google.common.util.concurrent.Futures.getDone;
+import static com.google.common.util.concurrent.ReflectionFreeAssertThrows.assertThrows;
 import static com.google.common.util.concurrent.TestPlatform.verifyThreadWasNotInterrupted;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -33,9 +35,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /** Test case for {@link TrustedListenableFutureTask}. */
+@NullMarked
 @GwtCompatible(emulated = true)
 public class TrustedListenableFutureTaskTest extends TestCase {
 
@@ -55,11 +59,7 @@ public class TrustedListenableFutureTaskTest extends TestCase {
     assertTrue(task.isDone());
     assertTrue(task.isCancelled());
     assertFalse(task.wasInterrupted());
-    try {
-      getDone(task);
-      fail();
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> getDone(task));
     verifyThreadWasNotInterrupted();
   }
 
@@ -76,14 +76,12 @@ public class TrustedListenableFutureTaskTest extends TestCase {
     task.run();
     assertTrue(task.isDone());
     assertFalse(task.isCancelled());
-    try {
-      getDone(task);
-      fail();
-    } catch (ExecutionException executionException) {
-      assertThat(executionException).hasCauseThat().isEqualTo(e);
-    }
+    ExecutionException executionException =
+        assertThrows(ExecutionException.class, () -> getDone(task));
+    assertThat(executionException).hasCauseThat().isEqualTo(e);
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // blocking wait
   public void testCancel_interrupted() throws Exception {
     final AtomicBoolean interruptedExceptionThrown = new AtomicBoolean();
@@ -125,15 +123,12 @@ public class TrustedListenableFutureTaskTest extends TestCase {
     assertTrue(task.isDone());
     assertTrue(task.isCancelled());
     assertTrue(task.wasInterrupted());
-    try {
-      task.get();
-      fail();
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> task.get());
     exitLatch.await();
     assertTrue(interruptedExceptionThrown.get());
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // blocking wait
   public void testRunIdempotency() throws Exception {
     final int numThreads = 10;
@@ -169,6 +164,7 @@ public class TrustedListenableFutureTaskTest extends TestCase {
     executor.shutdown();
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // blocking wait
   public void testToString() throws Exception {
     final CountDownLatch enterLatch = new CountDownLatch(1);
@@ -206,6 +202,7 @@ public class TrustedListenableFutureTaskTest extends TestCase {
     exitLatch.await();
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // used only in GwtIncompatible tests
   private void awaitUnchecked(CyclicBarrier barrier) {
     try {

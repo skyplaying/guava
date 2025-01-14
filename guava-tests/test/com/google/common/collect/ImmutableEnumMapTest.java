@@ -17,6 +17,8 @@
 package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Maps.toImmutableEnumMap;
+import static com.google.common.collect.ReflectionFreeAssertThrows.assertThrows;
 import static com.google.common.collect.testing.Helpers.mapEntry;
 import static com.google.common.collect.testing.features.CollectionFeature.ALLOWS_NULL_QUERIES;
 import static com.google.common.collect.testing.features.CollectionFeature.SERIALIZABLE;
@@ -24,10 +26,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Function;
 import com.google.common.collect.testing.AnEnum;
-import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.MapTestSuiteBuilder;
 import com.google.common.collect.testing.TestEnumMapGenerator;
 import com.google.common.collect.testing.features.CollectionSize;
@@ -39,6 +41,7 @@ import java.util.stream.Stream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Tests for {@code ImmutableEnumMap}.
@@ -46,7 +49,9 @@ import junit.framework.TestSuite;
  * @author Louis Wasserman
  */
 @GwtCompatible(emulated = true)
+@NullMarked
 public class ImmutableEnumMapTest extends TestCase {
+  @J2ktIncompatible
   public static class ImmutableEnumMapGenerator extends TestEnumMapGenerator {
     @Override
     protected Map<AnEnum, String> create(Entry<AnEnum, String>[] entries) {
@@ -58,6 +63,7 @@ public class ImmutableEnumMapTest extends TestCase {
     }
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite();
@@ -85,7 +91,7 @@ public class ImmutableEnumMapTest extends TestCase {
               }
             });
     ImmutableMap<AnEnum, AnEnum> copy = Maps.immutableEnumMap(map);
-    assertThat(copy.entrySet()).containsExactly(Helpers.mapEntry(AnEnum.A, AnEnum.A));
+    assertThat(copy.entrySet()).containsExactly(mapEntry(AnEnum.A, AnEnum.A));
   }
 
   public void testEmptyImmutableEnumMap() {
@@ -98,16 +104,13 @@ public class ImmutableEnumMapTest extends TestCase {
         Maps.immutableEnumMap(ImmutableMap.of(AnEnum.C, "c", AnEnum.A, "a", AnEnum.E, "e"));
 
     assertThat(map.entrySet())
-        .containsExactly(
-            Helpers.mapEntry(AnEnum.A, "a"),
-            Helpers.mapEntry(AnEnum.C, "c"),
-            Helpers.mapEntry(AnEnum.E, "e"))
+        .containsExactly(mapEntry(AnEnum.A, "a"), mapEntry(AnEnum.C, "c"), mapEntry(AnEnum.E, "e"))
         .inOrder();
   }
 
   public void testToImmutableEnumMap() {
     Collector<Entry<AnEnum, Integer>, ?, ImmutableMap<AnEnum, Integer>> collector =
-        Maps.toImmutableEnumMap(Entry::getKey, Entry::getValue);
+        toImmutableEnumMap(Entry::getKey, Entry::getValue);
     Equivalence<ImmutableMap<AnEnum, Integer>> equivalence =
         Equivalence.equals().<Entry<AnEnum, Integer>>pairwise().onResultOf(ImmutableMap::entrySet);
     CollectorTester.of(collector, equivalence)
@@ -120,17 +123,15 @@ public class ImmutableEnumMapTest extends TestCase {
 
   public void testToImmutableMap_exceptionOnDuplicateKey() {
     Collector<Entry<AnEnum, Integer>, ?, ImmutableMap<AnEnum, Integer>> collector =
-        Maps.toImmutableEnumMap(Entry::getKey, Entry::getValue);
-    try {
-      Stream.of(mapEntry(AnEnum.A, 1), mapEntry(AnEnum.A, 11)).collect(collector);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+        toImmutableEnumMap(Entry::getKey, Entry::getValue);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Stream.of(mapEntry(AnEnum.A, 1), mapEntry(AnEnum.A, 11)).collect(collector));
   }
 
   public void testToImmutableMapMerging() {
     Collector<Entry<AnEnum, Integer>, ?, ImmutableMap<AnEnum, Integer>> collector =
-        Maps.toImmutableEnumMap(Entry::getKey, Entry::getValue, Integer::sum);
+        toImmutableEnumMap(Entry::getKey, Entry::getValue, Integer::sum);
     Equivalence<ImmutableMap<AnEnum, Integer>> equivalence =
         Equivalence.equals().<Entry<AnEnum, Integer>>pairwise().onResultOf(ImmutableMap::entrySet);
     CollectorTester.of(collector, equivalence)

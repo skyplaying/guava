@@ -16,14 +16,18 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.ReflectionFreeAssertThrows.assertThrows;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.SerializableTester;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Tests for {@link EvictingQueue}.
@@ -31,14 +35,11 @@ import junit.framework.TestCase;
  * @author Kurt Alfred Kluever
  */
 @GwtCompatible(emulated = true)
+@NullMarked
 public class EvictingQueueTest extends TestCase {
 
   public void testCreateWithNegativeSize() throws Exception {
-    try {
-      EvictingQueue.create(-1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> EvictingQueue.create(-1));
   }
 
   public void testCreateWithZeroSize() throws Exception {
@@ -54,19 +55,11 @@ public class EvictingQueueTest extends TestCase {
     assertFalse(queue.remove("hi"));
     assertEquals(0, queue.size());
 
-    try {
-      queue.element();
-      fail();
-    } catch (NoSuchElementException expected) {
-    }
+    assertThrows(NoSuchElementException.class, () -> queue.element());
 
     assertNull(queue.peek());
     assertNull(queue.poll());
-    try {
-      queue.remove();
-      fail();
-    } catch (NoSuchElementException expected) {
-    }
+    assertThrows(NoSuchElementException.class, () -> queue.remove());
   }
 
   public void testRemainingCapacity_maxSize0() {
@@ -187,6 +180,7 @@ public class EvictingQueueTest extends TestCase {
     assertTrue(queue.isEmpty());
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // NullPointerTester
   public void testNullPointerExceptions() {
     NullPointerTester tester = new NullPointerTester();

@@ -17,6 +17,7 @@
 package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkPositionIndexes;
+import static java.lang.System.arraycopy;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
@@ -24,8 +25,8 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static utility methods pertaining to object arrays.
@@ -34,7 +35,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 2.0
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 @SuppressWarnings("AvoidObjectArrays")
 public final class ObjectArrays {
 
@@ -73,8 +73,8 @@ public final class ObjectArrays {
   public static <T extends @Nullable Object> T[] concat(
       T[] first, T[] second, Class<@NonNull T> type) {
     T[] result = newArray(type, first.length + second.length);
-    System.arraycopy(first, 0, result, 0, first.length);
-    System.arraycopy(second, 0, result, first.length, second.length);
+    arraycopy(first, 0, result, 0, first.length);
+    arraycopy(second, 0, result, first.length, second.length);
     return result;
   }
 
@@ -89,7 +89,7 @@ public final class ObjectArrays {
   public static <T extends @Nullable Object> T[] concat(@ParametricNullness T element, T[] array) {
     T[] result = newArray(array, array.length + 1);
     result[0] = element;
-    System.arraycopy(array, 0, result, 1, array.length);
+    arraycopy(array, 0, result, 1, array.length);
     return result;
   }
 
@@ -161,7 +161,7 @@ public final class ObjectArrays {
       @Nullable Object[] unsoundlyCovariantArray = dst;
       unsoundlyCovariantArray[len] = null;
     }
-    System.arraycopy(src, offset, dst, 0, len);
+    arraycopy(src, offset, dst, 0, len);
     return dst;
   }
 
@@ -191,7 +191,7 @@ public final class ObjectArrays {
       return new Object[0];
     }
     @Nullable Object[] result = new Object[length];
-    System.arraycopy(elements, offset, result, 0, length);
+    arraycopy(elements, offset, result, 0, length);
     return result;
   }
 

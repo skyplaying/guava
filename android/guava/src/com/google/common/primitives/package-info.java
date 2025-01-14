@@ -13,8 +13,8 @@
  */
 
 /**
- * Static utilities for working with the eight primitive types and {@code void}, and value types for
- * treating them as unsigned.
+ * Static utilities for the eight primitive types and {@code void}, and value types for treating
+ * them as unsigned or storing them in immutable arrays.
  *
  * <p>This package is a part of the open-source <a href="https://github.com/google/guava">Guava</a>
  * library.
@@ -24,10 +24,14 @@
  *
  * <h2>Contents</h2>
  *
- * <h3>General static utilities</h3>
+ * <h3>Value types</h3>
  *
  * <ul>
- *   <li>{@link Primitives}
+ *   <li>{@link ImmutableDoubleArray}
+ *   <li>{@link ImmutableIntArray}
+ *   <li>{@link ImmutableLongArray}
+ *   <li>{@link UnsignedInteger}
+ *   <li>{@link UnsignedLong}
  * </ul>
  *
  * <h3>Per-type static utilities</h3>
@@ -53,16 +57,15 @@
  *   <li>{@link Shorts}
  * </ul>
  *
- * <h3>Value types</h3>
+ * <h3>General static utilities</h3>
  *
  * <ul>
- *   <li>{@link UnsignedInteger}
- *   <li>{@link UnsignedLong}
+ *   <li>{@link Primitives}
  * </ul>
  */
-@ParametersAreNonnullByDefault
 @CheckReturnValue
+@NullMarked
 package com.google.common.primitives;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;

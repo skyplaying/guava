@@ -15,15 +15,16 @@
 package com.google.common.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility {@link CacheLoader} implementations intended for use in testing.
@@ -31,6 +32,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author mike nonemacher
  */
 @GwtCompatible(emulated = true)
+@NullUnmarked
 class TestingCacheLoaders {
 
   /**
@@ -144,7 +146,7 @@ class TestingCacheLoaders {
     @Override
     public ListenableFuture<Integer> reload(Integer key, Integer oldValue) {
       countReload.incrementAndGet();
-      return Futures.immediateFuture(oldValue + 1);
+      return immediateFuture(oldValue + 1);
     }
 
     public int getLoadCount() {

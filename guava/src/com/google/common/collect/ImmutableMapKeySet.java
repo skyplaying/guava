@@ -24,7 +24,7 @@ import com.google.common.annotations.J2ktIncompatible;
 import java.io.Serializable;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@code keySet()} implementation for {@link ImmutableMap}.
@@ -33,7 +33,6 @@ import javax.annotation.CheckForNull;
  * @author Kevin Bourrillion
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 final class ImmutableMapKeySet<K, V> extends IndexedImmutableSet<K> {
   private final ImmutableMap<K, V> map;
 
@@ -57,7 +56,7 @@ final class ImmutableMapKeySet<K, V> extends IndexedImmutableSet<K> {
   }
 
   @Override
-  public boolean contains(@CheckForNull Object object) {
+  public boolean contains(@Nullable Object object) {
     return map.containsKey(object);
   }
 
@@ -75,6 +74,15 @@ final class ImmutableMapKeySet<K, V> extends IndexedImmutableSet<K> {
   @Override
   boolean isPartialView() {
     return true;
+  }
+
+  // redeclare to help optimizers with b/310253115
+  @SuppressWarnings("RedundantOverride")
+  @Override
+  @J2ktIncompatible // serialization
+  @GwtIncompatible // serialization
+  Object writeReplace() {
+    return super.writeReplace();
   }
 
   // No longer used for new writes, but kept so that old data can still be read.

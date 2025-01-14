@@ -23,15 +23,16 @@ import static java.lang.Character.MAX_LOW_SURROGATE;
 import static java.lang.Character.MIN_HIGH_SURROGATE;
 import static java.lang.Character.MIN_LOW_SURROGATE;
 import static java.lang.Character.MIN_SUPPLEMENTARY_CODE_POINT;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit tests for {@link Utf8}.
@@ -41,6 +42,7 @@ import junit.framework.TestCase;
  * @author Clément Roux
  */
 @GwtCompatible(emulated = true)
+@NullUnmarked
 public class Utf8Test extends TestCase {
 
   private static final ImmutableList<String> ILL_FORMED_STRINGS;
@@ -59,6 +61,8 @@ public class Utf8Test extends TestCase {
     builder.add(newString(MIN_LOW_SURROGATE, MAX_HIGH_SURROGATE));
     ILL_FORMED_STRINGS = builder.build();
   }
+
+  // We can't use Character.isSurrogate(c) because of GWT.
 
   public void testEncodedLength_validStrings() {
     assertEquals(0, Utf8.encodedLength(""));
@@ -188,21 +192,18 @@ public class Utf8Test extends TestCase {
           FOUR_BYTE_ROUNDTRIPPABLE_CHARACTERS;
 
   /** Tests that round tripping of all two byte permutations work. */
-  @J2ktIncompatible
   @GwtIncompatible // java.nio.charset.Charset
   public void testIsWellFormed_1Byte() {
     testBytes(1, EXPECTED_ONE_BYTE_ROUNDTRIPPABLE_COUNT);
   }
 
   /** Tests that round tripping of all two byte permutations work. */
-  @J2ktIncompatible
   @GwtIncompatible // java.nio.charset.Charset
   public void testIsWellFormed_2Bytes() {
     testBytes(2, EXPECTED_TWO_BYTE_ROUNDTRIPPABLE_COUNT);
   }
 
   /** Tests that round tripping of all three byte permutations work. */
-  @J2ktIncompatible
   @GwtIncompatible // java.nio.charset.Charset
 
   public void testIsWellFormed_3Bytes() {
@@ -306,7 +307,6 @@ public class Utf8Test extends TestCase {
    * @param numBytes the number of bytes in the byte array
    * @param expectedCount the expected number of roundtrippable permutations
    */
-  @J2ktIncompatible
   @GwtIncompatible // java.nio.charset.Charset
   private static void testBytes(int numBytes, long expectedCount) {
     testBytes(numBytes, expectedCount, 0, -1);
@@ -322,7 +322,6 @@ public class Utf8Test extends TestCase {
    * @param lim the limit of bytes to process encoded as a long as big-endian, or -1 to mean the max
    *     limit for numBytes
    */
-  @J2ktIncompatible
   @GwtIncompatible // java.nio.charset.Charset
   private static void testBytes(int numBytes, long expectedCount, long start, long lim) {
     byte[] bytes = new byte[numBytes];
@@ -338,8 +337,8 @@ public class Utf8Test extends TestCase {
       }
       boolean isRoundTrippable = Utf8.isWellFormed(bytes);
       assertEquals(isRoundTrippable, Utf8.isWellFormed(bytes, 0, numBytes));
-      String s = new String(bytes, Charsets.UTF_8);
-      byte[] bytesReencoded = s.getBytes(Charsets.UTF_8);
+      String s = new String(bytes, UTF_8);
+      byte[] bytesReencoded = s.getBytes(UTF_8);
       boolean bytesEqual = Arrays.equals(bytes, bytesReencoded);
 
       if (bytesEqual != isRoundTrippable) {

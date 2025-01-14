@@ -14,14 +14,20 @@
 
 package com.google.common.collect;
 
-import java.util.Map;
+import static java.lang.Math.log;
 
+import com.google.common.annotations.GwtIncompatible;
+import java.util.Map;
+import org.jspecify.annotations.NullUnmarked;
+
+@GwtIncompatible
+@NullUnmarked
 public class CompactLinkedHashMapFloodingTest
     extends AbstractHashFloodingTest<Map<Object, Object>> {
   public CompactLinkedHashMapFloodingTest() {
     super(
         ImmutableList.of(Construction.mapFromKeys(CompactLinkedHashMap::create)),
-        n -> n * Math.log(n),
+        n -> n * log(n),
         ImmutableList.of(QueryOp.MAP_GET));
   }
 }
