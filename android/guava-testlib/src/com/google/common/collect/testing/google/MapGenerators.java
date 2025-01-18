@@ -16,12 +16,14 @@
 
 package com.google.common.collect.testing.google;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.testing.Helpers.mapEntry;
+import static java.util.Arrays.asList;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.testing.AnEnum;
@@ -33,12 +35,12 @@ import com.google.common.collect.testing.TestStringListGenerator;
 import com.google.common.collect.testing.TestStringMapGenerator;
 import com.google.common.collect.testing.TestUnhashableCollectionGenerator;
 import com.google.common.collect.testing.UnhashableObject;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Generators of different types of map and related collections, such as keys, entries and values.
@@ -46,12 +48,14 @@ import java.util.Map.Entry;
  * @author Hayward Chan
  */
 @GwtCompatible
+@NullMarked
 public class MapGenerators {
   public static class ImmutableMapGenerator extends TestStringMapGenerator {
     @Override
     protected Map<String, String> create(Entry<String, String>[] entries) {
       ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
       for (Entry<String, String> entry : entries) {
+        checkNotNull(entry);
         builder.put(entry.getKey(), entry.getValue());
       }
       return builder.buildOrThrow();
@@ -72,7 +76,7 @@ public class MapGenerators {
   public static class ImmutableMapCopyOfEntriesGenerator extends TestStringMapGenerator {
     @Override
     protected Map<String, String> create(Entry<String, String>[] entries) {
-      return ImmutableMap.copyOf(Arrays.asList(entries));
+      return ImmutableMap.copyOf(asList(entries));
     }
   }
 
@@ -128,7 +132,7 @@ public class MapGenerators {
     @SuppressWarnings("unchecked")
     @Override
     public Entry<String, Integer>[] createArray(int length) {
-      return new Entry[length];
+      return (Entry<String, Integer>[]) new Entry<?, ?>[length];
     }
 
     @Override
@@ -141,7 +145,7 @@ public class MapGenerators {
       ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
       for (Object o : elements) {
         @SuppressWarnings("unchecked")
-        Entry<String, Integer> entry = (Entry<String, Integer>) o;
+        Entry<String, Integer> entry = (Entry<String, Integer>) checkNotNull(o);
         builder.put(entry);
       }
       return builder.buildOrThrow().entrySet().asList();
@@ -153,7 +157,7 @@ public class MapGenerators {
     protected Map<AnEnum, String> create(Entry<AnEnum, String>[] entries) {
       Map<AnEnum, String> map = Maps.newHashMap();
       for (Entry<AnEnum, String> entry : entries) {
-        // checkArgument(!map.containsKey(entry.getKey()));
+        checkNotNull(entry);
         map.put(entry.getKey(), entry.getValue());
       }
       return Maps.immutableEnumMap(map);
@@ -188,16 +192,11 @@ public class MapGenerators {
     @Override
     public SampleElements<Entry<String, Collection<Integer>>> samples() {
       return new SampleElements<>(
-          mapEntry("one", collectionOf(10000)),
-          mapEntry("two", collectionOf(-2000)),
-          mapEntry("three", collectionOf(300)),
-          mapEntry("four", collectionOf(-40)),
-          mapEntry("five", collectionOf(5)));
-    }
-
-    // javac7 can't infer the type parameters correctly in samples()
-    private static Collection<Integer> collectionOf(int item) {
-      return ImmutableSet.of(item);
+          mapEntry("one", ImmutableSet.of(10000)),
+          mapEntry("two", ImmutableSet.of(-2000)),
+          mapEntry("three", ImmutableSet.of(300)),
+          mapEntry("four", ImmutableSet.of(-40)),
+          mapEntry("five", ImmutableSet.of(5)));
     }
 
     @Override
@@ -207,7 +206,7 @@ public class MapGenerators {
       for (Object elem : elements) {
         @SuppressWarnings("unchecked") // safe by generator contract
         Entry<String, Collection<Integer>> entry = (Entry<String, Collection<Integer>>) elem;
-        Integer value = Iterables.getOnlyElement(entry.getValue());
+        Integer value = getOnlyElement(entry.getValue());
         builder.put(entry.getKey(), value);
       }
       return builder.buildOrThrow().asMultimap().asMap();
@@ -232,7 +231,7 @@ public class MapGenerators {
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"}) // needed for arrays
-    public ImmutableSet<Integer>[] createValueArray(int length) {
+    public Collection<Integer>[] createValueArray(int length) {
       return new ImmutableSet[length];
     }
   }

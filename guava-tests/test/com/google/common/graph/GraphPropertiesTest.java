@@ -20,6 +20,7 @@ import static com.google.common.graph.Graphs.hasCycle;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import org.junit.runners.JUnit4;
 /** Tests for {@link Graphs#hasCycle(Graph)} and {@link Graphs#hasCycle(Network)}. */
 // TODO(user): Consider moving this to GraphsTest.
 @RunWith(JUnit4.class)
+@NullUnmarked
 public class GraphPropertiesTest {
   ImmutableList<MutableGraph<Integer>> graphsToTest;
   Graph<Integer> directedGraph;
@@ -156,6 +158,17 @@ public class GraphPropertiesTest {
   }
 
   @Test
+  public void hasCycle_deepPathGraph() {
+    for (MutableGraph<Integer> graph : graphsToTest) {
+      for (int i = 0; i < 100000; i++) {
+        graph.putEdge(i, i + 1);
+      }
+    }
+    assertThat(hasCycle(directedNetwork)).isFalse();
+    assertThat(hasCycle(undirectedNetwork)).isFalse();
+  }
+
+  @Test
   public void hasCycle_twoParallelEdges() {
     for (MutableNetwork<Integer, String> network : networksToTest) {
       network.addEdge(1, 2, "1-2a");
@@ -175,5 +188,16 @@ public class GraphPropertiesTest {
     }
     assertThat(hasCycle(directedNetwork)).isTrue();
     assertThat(hasCycle(undirectedNetwork)).isTrue();
+  }
+
+  @Test
+  public void hasCycle_deepPathNetwork() {
+    for (MutableNetwork<Integer, String> network : networksToTest) {
+      for (int i = 0; i < 100000; i++) {
+        network.addEdge(i, i + 1, Integer.toString(i));
+      }
+    }
+    assertThat(hasCycle(directedNetwork)).isFalse();
+    assertThat(hasCycle(undirectedNetwork)).isFalse();
   }
 }

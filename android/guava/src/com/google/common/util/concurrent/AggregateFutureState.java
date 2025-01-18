@@ -25,9 +25,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A helper which does some thread-safe operations for aggregate futures, which must be implemented
@@ -40,18 +38,17 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @GwtCompatible(emulated = true)
 @ReflectionSupport(value = ReflectionSupport.Level.FULL)
-@ElementTypesAreNonnullByDefault
 abstract class AggregateFutureState<OutputT extends @Nullable Object>
     extends AbstractFuture.TrustedFuture<OutputT> {
   // Lazily initialized the first time we see an exception; not released until all the input futures
   // have completed and we have processed them all.
-  @CheckForNull private volatile Set<Throwable> seenExceptions = null;
+  private volatile @Nullable Set<Throwable> seenExceptions = null;
 
   private volatile int remaining;
 
   private static final AtomicHelper ATOMIC_HELPER;
 
-  private static final Logger log = Logger.getLogger(AggregateFutureState.class.getName());
+  private static final LazyLogger log = new LazyLogger(AggregateFutureState.class);
 
   static {
     AtomicHelper helper;
@@ -61,7 +58,7 @@ abstract class AggregateFutureState<OutputT extends @Nullable Object>
           new SafeAtomicHelper(
               newUpdater(AggregateFutureState.class, Set.class, "seenExceptions"),
               newUpdater(AggregateFutureState.class, "remaining"));
-    } catch (RuntimeException | Error reflectionFailure) {
+    } catch (Throwable reflectionFailure) { // sneaky checked exception
       // Some Android 5.0.x Samsung devices have bugs in JDK reflection APIs that cause
       // getDeclaredField to throw a NoSuchFieldException when the field is definitely there.
       // For these users fallback to a suboptimal implementation, based on synchronized. This will
@@ -73,7 +70,7 @@ abstract class AggregateFutureState<OutputT extends @Nullable Object>
     // Log after all static init is finished; if an installed logger uses any Futures methods, it
     // shouldn't break in cases where reflection is missing/broken.
     if (thrownReflectionFailure != null) {
-      log.log(Level.SEVERE, "SafeAtomicHelper is broken!", thrownReflectionFailure);
+      log.get().log(Level.SEVERE, "SafeAtomicHelper is broken!", thrownReflectionFailure);
     }
   }
 
@@ -152,32 +149,31 @@ abstract class AggregateFutureState<OutputT extends @Nullable Object>
   private abstract static class AtomicHelper {
     /** Atomic compare-and-set of the {@link AggregateFutureState#seenExceptions} field. */
     abstract void compareAndSetSeenExceptions(
-        AggregateFutureState<?> state, @CheckForNull Set<Throwable> expect, Set<Throwable> update);
+        AggregateFutureState<?> state, @Nullable Set<Throwable> expect, Set<Throwable> update);
 
     /** Atomic decrement-and-get of the {@link AggregateFutureState#remaining} field. */
     abstract int decrementAndGetRemainingCount(AggregateFutureState<?> state);
   }
 
   private static final class SafeAtomicHelper extends AtomicHelper {
-    final AtomicReferenceFieldUpdater<AggregateFutureState<?>, Set<Throwable>>
+    final AtomicReferenceFieldUpdater<
+            ? super AggregateFutureState<?>, ? super @Nullable Set<Throwable>>
         seenExceptionsUpdater;
 
-    final AtomicIntegerFieldUpdater<AggregateFutureState<?>> remainingCountUpdater;
+    final AtomicIntegerFieldUpdater<? super AggregateFutureState<?>> remainingCountUpdater;
 
-    @SuppressWarnings({"rawtypes", "unchecked"}) // Unavoidable with reflection API
     SafeAtomicHelper(
-        AtomicReferenceFieldUpdater seenExceptionsUpdater,
-        AtomicIntegerFieldUpdater remainingCountUpdater) {
-      this.seenExceptionsUpdater =
-          (AtomicReferenceFieldUpdater<AggregateFutureState<?>, Set<Throwable>>)
-              seenExceptionsUpdater;
-      this.remainingCountUpdater =
-          (AtomicIntegerFieldUpdater<AggregateFutureState<?>>) remainingCountUpdater;
+        AtomicReferenceFieldUpdater<
+                ? super AggregateFutureState<?>, ? super @Nullable Set<Throwable>>
+            seenExceptionsUpdater,
+        AtomicIntegerFieldUpdater<? super AggregateFutureState<?>> remainingCountUpdater) {
+      this.seenExceptionsUpdater = seenExceptionsUpdater;
+      this.remainingCountUpdater = remainingCountUpdater;
     }
 
     @Override
     void compareAndSetSeenExceptions(
-        AggregateFutureState<?> state, @CheckForNull Set<Throwable> expect, Set<Throwable> update) {
+        AggregateFutureState<?> state, @Nullable Set<Throwable> expect, Set<Throwable> update) {
       seenExceptionsUpdater.compareAndSet(state, expect, update);
     }
 
@@ -190,7 +186,7 @@ abstract class AggregateFutureState<OutputT extends @Nullable Object>
   private static final class SynchronizedAtomicHelper extends AtomicHelper {
     @Override
     void compareAndSetSeenExceptions(
-        AggregateFutureState<?> state, @CheckForNull Set<Throwable> expect, Set<Throwable> update) {
+        AggregateFutureState<?> state, @Nullable Set<Throwable> expect, Set<Throwable> update) {
       synchronized (state) {
         if (state.seenExceptions == expect) {
           state.seenExceptions = update;

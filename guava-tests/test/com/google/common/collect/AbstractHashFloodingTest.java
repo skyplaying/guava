@@ -15,13 +15,15 @@
  */
 package com.google.common.collect;
 
+import static com.google.common.collect.Lists.cartesianProduct;
+import static com.google.common.collect.Lists.transform;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static java.lang.Math.max;
+import static java.util.Arrays.asList;
+import static java.util.Collections.nCopies;
 
-import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,13 +31,15 @@ import java.util.function.BiConsumer;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.Supplier;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract superclass for tests that hash flooding a collection has controlled worst-case
  * performance.
  */
-@GwtCompatible
+@GwtIncompatible
+@NullUnmarked
 public abstract class AbstractHashFloodingTest<T> extends TestCase {
   private final List<Construction<T>> constructions;
   private final IntToDoubleFunction constructionAsymptotics;
@@ -171,11 +175,11 @@ public abstract class AbstractHashFloodingTest<T> extends TestCase {
     String str1 = "Aa";
     String str2 = "BB";
     assertEquals(str1.hashCode(), str2.hashCode());
-    List<String> haveSameHashes2 = Arrays.asList(str1, str2);
+    List<String> haveSameHashes2 = asList(str1, str2);
     List<CountsHashCodeAndEquals> result =
         Lists.newArrayList(
-            Lists.transform(
-                Lists.cartesianProduct(Collections.nCopies(power, haveSameHashes2)),
+            transform(
+                cartesianProduct(nCopies(power, haveSameHashes2)),
                 strs ->
                     new CountsHashCodeAndEquals(
                         String.join("", strs),
@@ -188,7 +192,6 @@ public abstract class AbstractHashFloodingTest<T> extends TestCase {
     return result;
   }
 
-  @GwtIncompatible
   public void testResistsHashFloodingInConstruction() {
     CallsCounter smallCounter = new CallsCounter();
     List<CountsHashCodeAndEquals> haveSameHashesSmall = createAdversarialInput(10, smallCounter);
@@ -221,7 +224,6 @@ public abstract class AbstractHashFloodingTest<T> extends TestCase {
     }
   }
 
-  @GwtIncompatible
   public void testResistsHashFloodingOnQuery() {
     CallsCounter smallCounter = new CallsCounter();
     List<CountsHashCodeAndEquals> haveSameHashesSmall = createAdversarialInput(10, smallCounter);
@@ -259,7 +261,7 @@ public abstract class AbstractHashFloodingTest<T> extends TestCase {
     for (Object o : haveSameHashes) {
       counter.zero();
       query.apply(collection, o);
-      worstOps = Math.max(worstOps, counter.total());
+      worstOps = max(worstOps, counter.total());
     }
     return worstOps;
   }

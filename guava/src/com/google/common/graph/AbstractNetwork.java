@@ -18,8 +18,11 @@ package com.google.common.graph;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.graph.GraphConstants.EDGE_REMOVED_FROM_GRAPH;
 import static com.google.common.graph.GraphConstants.ENDPOINTS_MISMATCH;
 import static com.google.common.graph.GraphConstants.MULTIPLE_EDGES_CONNECTING;
+import static com.google.common.graph.GraphConstants.NODE_PAIR_REMOVED_FROM_GRAPH;
+import static com.google.common.graph.GraphConstants.NODE_REMOVED_FROM_GRAPH;
 import static java.util.Collections.unmodifiableSet;
 
 import com.google.common.annotations.Beta;
@@ -34,7 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class provides a skeletal implementation of {@link Network}. It is recommended to extend
@@ -49,8 +52,9 @@ import javax.annotation.CheckForNull;
  * @since 20.0
  */
 @Beta
-@ElementTypesAreNonnullByDefault
 public abstract class AbstractNetwork<N, E> implements Network<N, E> {
+  /** Constructor for use by subclasses. */
+  public AbstractNetwork() {}
 
   @Override
   public Graph<N> asGraph() {
@@ -84,7 +88,7 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
           // Network<LinkedList>.
           @SuppressWarnings("unchecked")
           @Override
-          public boolean contains(@CheckForNull Object obj) {
+          public boolean contains(@Nullable Object obj) {
             if (!(obj instanceof EndpointPair)) {
               return false;
             }
@@ -161,16 +165,20 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
     EndpointPair<N> endpointPair = incidentNodes(edge); // Verifies that edge is in this network.
     Set<E> endpointPairIncidentEdges =
         Sets.union(incidentEdges(endpointPair.nodeU()), incidentEdges(endpointPair.nodeV()));
-    return Sets.difference(endpointPairIncidentEdges, ImmutableSet.of(edge));
+    return edgeInvalidatableSet(
+        Sets.difference(endpointPairIncidentEdges, ImmutableSet.of(edge)), edge);
   }
 
   @Override
   public Set<E> edgesConnecting(N nodeU, N nodeV) {
     Set<E> outEdgesU = outEdges(nodeU);
     Set<E> inEdgesV = inEdges(nodeV);
-    return outEdgesU.size() <= inEdgesV.size()
-        ? unmodifiableSet(Sets.filter(outEdgesU, connectedPredicate(nodeU, nodeV)))
-        : unmodifiableSet(Sets.filter(inEdgesV, connectedPredicate(nodeV, nodeU)));
+    return nodePairInvalidatableSet(
+        outEdgesU.size() <= inEdgesV.size()
+            ? unmodifiableSet(Sets.filter(outEdgesU, connectedPredicate(nodeU, nodeV)))
+            : unmodifiableSet(Sets.filter(inEdgesV, connectedPredicate(nodeV, nodeU))),
+        nodeU,
+        nodeV);
   }
 
   @Override
@@ -200,8 +208,7 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
   }
 
   @Override
-  @CheckForNull
-  public E edgeConnectingOrNull(N nodeU, N nodeV) {
+  public @Nullable E edgeConnectingOrNull(N nodeU, N nodeV) {
     Set<E> edgesConnecting = edgesConnecting(nodeU, nodeV);
     switch (edgesConnecting.size()) {
       case 0:
@@ -214,8 +221,7 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
   }
 
   @Override
-  @CheckForNull
-  public E edgeConnectingOrNull(EndpointPair<N> endpoints) {
+  public @Nullable E edgeConnectingOrNull(EndpointPair<N> endpoints) {
     validateEndpoints(endpoints);
     return edgeConnectingOrNull(endpoints.nodeU(), endpoints.nodeV());
   }
@@ -250,7 +256,7 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
   }
 
   @Override
-  public final boolean equals(@CheckForNull Object obj) {
+  public final boolean equals(@Nullable Object obj) {
     if (obj == this) {
       return true;
     }
@@ -282,6 +288,41 @@ public abstract class AbstractNetwork<N, E> implements Network<N, E> {
         + nodes()
         + ", edges: "
         + edgeIncidentNodesMap(this);
+  }
+
+  /**
+   * Returns a {@link Set} whose methods throw {@link IllegalStateException} when the given edge is
+   * not present in this network.
+   *
+   * @since 33.1.0
+   */
+  protected final <T> Set<T> edgeInvalidatableSet(Set<T> set, E edge) {
+    return InvalidatableSet.of(
+        set, () -> edges().contains(edge), () -> String.format(EDGE_REMOVED_FROM_GRAPH, edge));
+  }
+
+  /**
+   * Returns a {@link Set} whose methods throw {@link IllegalStateException} when the given node is
+   * not present in this network.
+   *
+   * @since 33.1.0
+   */
+  protected final <T> Set<T> nodeInvalidatableSet(Set<T> set, N node) {
+    return InvalidatableSet.of(
+        set, () -> nodes().contains(node), () -> String.format(NODE_REMOVED_FROM_GRAPH, node));
+  }
+
+  /**
+   * Returns a {@link Set} whose methods throw {@link IllegalStateException} when either of the
+   * given nodes is not present in this network.
+   *
+   * @since 33.1.0
+   */
+  protected final <T> Set<T> nodePairInvalidatableSet(Set<T> set, N nodeU, N nodeV) {
+    return InvalidatableSet.of(
+        set,
+        () -> nodes().contains(nodeU) && nodes().contains(nodeV),
+        () -> String.format(NODE_PAIR_REMOVED_FROM_GRAPH, nodeU, nodeV));
   }
 
   private static <N, E> Map<E, EndpointPair<N>> edgeIncidentNodesMap(final Network<N, E> network) {

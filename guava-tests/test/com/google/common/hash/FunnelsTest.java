@@ -16,11 +16,12 @@
 
 package com.google.common.hash;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.base.Charsets;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.SerializableTester;
 import java.io.OutputStream;
@@ -28,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 import org.mockito.InOrder;
 
 /**
@@ -35,6 +37,7 @@ import org.mockito.InOrder;
  *
  * @author Dimitris Andreou
  */
+@NullUnmarked
 public class FunnelsTest extends TestCase {
   public void testForBytes() {
     PrimitiveSink primitiveSink = mock(PrimitiveSink.class);
@@ -151,8 +154,8 @@ public class FunnelsTest extends TestCase {
         Funnels.sequentialFunnel(Funnels.integerFunnel()),
         SerializableTester.reserialize(Funnels.sequentialFunnel(Funnels.integerFunnel())));
     assertEquals(
-        Funnels.stringFunnel(Charsets.US_ASCII),
-        SerializableTester.reserialize(Funnels.stringFunnel(Charsets.US_ASCII)));
+        Funnels.stringFunnel(US_ASCII),
+        SerializableTester.reserialize(Funnels.stringFunnel(US_ASCII)));
   }
 
   public void testEquals() {
@@ -161,8 +164,8 @@ public class FunnelsTest extends TestCase {
         .addEqualityGroup(Funnels.integerFunnel())
         .addEqualityGroup(Funnels.longFunnel())
         .addEqualityGroup(Funnels.unencodedCharsFunnel())
-        .addEqualityGroup(Funnels.stringFunnel(Charsets.UTF_8))
-        .addEqualityGroup(Funnels.stringFunnel(Charsets.US_ASCII))
+        .addEqualityGroup(Funnels.stringFunnel(UTF_8))
+        .addEqualityGroup(Funnels.stringFunnel(US_ASCII))
         .addEqualityGroup(
             Funnels.sequentialFunnel(Funnels.integerFunnel()),
             SerializableTester.reserialize(Funnels.sequentialFunnel(Funnels.integerFunnel())))

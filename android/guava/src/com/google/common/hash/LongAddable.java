@@ -14,13 +14,11 @@
 
 package com.google.common.hash;
 
-
 /**
  * Abstract interface for objects that can concurrently add longs.
  *
  * @author Louis Wasserman
  */
-@ElementTypesAreNonnullByDefault
 interface LongAddable {
   void increment();
 

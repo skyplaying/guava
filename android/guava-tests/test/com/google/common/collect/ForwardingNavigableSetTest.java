@@ -16,6 +16,8 @@
 
 package com.google.common.collect;
 
+import static java.util.Arrays.asList;
+
 import com.google.common.base.Function;
 import com.google.common.collect.testing.SafeTreeSet;
 import com.google.common.collect.testing.SetTestSuiteBuilder;
@@ -24,7 +26,6 @@ import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.ForwardingWrapperTester;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -34,13 +35,15 @@ import java.util.SortedSet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tests for {@code ForwardingNavigableSet}.
  *
  * @author Louis Wasserman
  */
+@NullUnmarked
 public class ForwardingNavigableSetTest extends TestCase {
   static class StandardImplForwardingNavigableSet<T> extends ForwardingNavigableSet<T> {
     private final NavigableSet<T> backingSet;
@@ -170,7 +173,7 @@ public class ForwardingNavigableSetTest extends TestCase {
                   @Override
                   protected Set<String> create(String[] elements) {
                     return new StandardImplForwardingNavigableSet<>(
-                        new SafeTreeSet<String>(Arrays.asList(elements)));
+                        new SafeTreeSet<String>(asList(elements)));
                   }
 
                   @Override

@@ -22,6 +22,7 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.util.concurrent.AbstractScheduledService.Cancellable;
 import com.google.common.util.concurrent.AbstractScheduledService.Scheduler;
@@ -43,13 +44,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Unit test for {@link AbstractScheduledService}.
  *
  * @author Luke Sandberg
  */
+@NullUnmarked
 public class AbstractScheduledServiceTest extends TestCase {
 
   volatile Scheduler configuration = newFixedDelaySchedule(0, 10, MILLISECONDS);
@@ -97,11 +100,7 @@ public class AbstractScheduledServiceTest extends TestCase {
     service.startAsync().awaitRunning();
     service.runFirstBarrier.await();
     service.runSecondBarrier.await();
-    try {
-      future.get();
-      fail();
-    } catch (CancellationException expected) {
-    }
+    assertThrows(CancellationException.class, () -> future.get());
     // An execution exception holds a runtime exception (from throwables.propagate) that holds our
     // original exception.
     assertEquals(service.runException, service.failureCause());
@@ -111,12 +110,9 @@ public class AbstractScheduledServiceTest extends TestCase {
   public void testFailOnExceptionFromStartUp() {
     TestService service = new TestService();
     service.startUpException = new Exception();
-    try {
-      service.startAsync().awaitRunning();
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e).hasCauseThat().isEqualTo(service.startUpException);
-    }
+    IllegalStateException e =
+        assertThrows(IllegalStateException.class, () -> service.startAsync().awaitRunning());
+    assertThat(e).hasCauseThat().isEqualTo(service.startUpException);
     assertEquals(0, service.numberOfTimesRunCalled.get());
     assertEquals(Service.State.FAILED, service.state());
   }
@@ -154,12 +150,9 @@ public class AbstractScheduledServiceTest extends TestCase {
     service.runFirstBarrier.await();
     service.stopAsync();
     service.runSecondBarrier.await();
-    try {
-      service.awaitTerminated();
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e).hasCauseThat().isEqualTo(service.shutDownException);
-    }
+    IllegalStateException e =
+        assertThrows(IllegalStateException.class, () -> service.awaitTerminated());
+    assertThat(e).hasCauseThat().isEqualTo(service.shutDownException);
     assertEquals(Service.State.FAILED, service.state());
   }
 
@@ -246,11 +239,7 @@ public class AbstractScheduledServiceTest extends TestCase {
           }
         };
 
-    try {
-      service.startAsync().awaitRunning();
-      fail("Expected service to fail during startup");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> service.startAsync().awaitRunning());
 
     assertTrue(executor.get().awaitTermination(100, MILLISECONDS));
   }
@@ -295,14 +284,12 @@ public class AbstractScheduledServiceTest extends TestCase {
             return "Foo";
           }
         };
-    try {
-      service.startAsync().awaitRunning(1, MILLISECONDS);
-      fail("Expected timeout");
-    } catch (TimeoutException e) {
-      assertThat(e)
-          .hasMessageThat()
-          .isEqualTo("Timed out waiting for Foo [STARTING] to reach the RUNNING state.");
-    }
+    TimeoutException e =
+        assertThrows(
+            TimeoutException.class, () -> service.startAsync().awaitRunning(1, MILLISECONDS));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("Timed out waiting for Foo [STARTING] to reach the RUNNING state.");
   }
 
   private class TestService extends AbstractScheduledService {
@@ -453,11 +440,7 @@ public class AbstractScheduledServiceTest extends TestCase {
           }
         };
     service.startAsync().awaitRunning();
-    try {
-      service.firstBarrier.await(5, SECONDS);
-      fail();
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(TimeoutException.class, () -> service.firstBarrier.await(5, SECONDS));
     assertEquals(0, service.numIterations.get());
     service.stopAsync();
     service.awaitTerminated();
@@ -478,11 +461,7 @@ public class AbstractScheduledServiceTest extends TestCase {
           }
         };
     service.startAsync().awaitRunning();
-    try {
-      service.firstBarrier.await(5, SECONDS);
-      fail();
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(TimeoutException.class, () -> service.firstBarrier.await(5, SECONDS));
     assertEquals(0, service.numIterations.get());
     service.stopAsync();
     service.awaitTerminated();
@@ -554,6 +533,7 @@ public class AbstractScheduledServiceTest extends TestCase {
             protected Scheduler scheduler() {
               return new CustomScheduler() {
                 @Override
+                @SuppressWarnings("ThreadPriorityCheck") // doing our best to test for races
                 protected Schedule getNextSchedule() throws Exception {
                   if (state() != State.STARTING) {
                     inGetNextSchedule.await();
@@ -578,6 +558,7 @@ public class AbstractScheduledServiceTest extends TestCase {
           protected Scheduler scheduler() {
             return new AbstractScheduledService.CustomScheduler() {
               @Override
+              @SuppressWarnings("ThreadPriorityCheck") // doing our best to test for races
               protected Schedule getNextSchedule() throws Exception {
                 // Explicitly yield to increase the probability of a pathological scheduling.
                 Thread.yield();
@@ -639,12 +620,9 @@ public class AbstractScheduledServiceTest extends TestCase {
       service.secondBarrier.await();
     }
     Thread.sleep(1000);
-    try {
-      service.stopAsync().awaitTerminated(100, SECONDS);
-      fail();
-    } catch (IllegalStateException e) {
-      assertEquals(State.FAILED, service.state());
-    }
+    assertThrows(
+        IllegalStateException.class, () -> service.stopAsync().awaitTerminated(100, SECONDS));
+    assertEquals(State.FAILED, service.state());
   }
 
   private static class TestFailingCustomScheduledService extends AbstractScheduledService {

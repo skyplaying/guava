@@ -17,6 +17,8 @@
 package com.google.common.collect;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.util.Collections.sort;
+import static java.util.Collections.unmodifiableMap;
 
 import com.google.caliper.BeforeExperiment;
 import com.google.caliper.Benchmark;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * A microbenchmark that tests the performance of get() and iteration on various map
@@ -35,6 +38,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  *
  * @author Nicholaus Shupe
  */
+@NullUnmarked
 public class MapBenchmark {
   @Param({"Hash", "LinkedHM", "MapMaker1", "Immutable"})
   private Impl impl;
@@ -63,7 +67,7 @@ public class MapBenchmark {
     UnmodHM {
       @Override
       Map<Element, Element> create(Collection<Element> keys) {
-        return Collections.unmodifiableMap(Hash.create(keys));
+        return unmodifiableMap(Hash.create(keys));
       }
     },
     SyncHM {
@@ -186,7 +190,7 @@ public class MapBenchmark {
 
     if (sortedData) {
       List<Element> valueList = newArrayList(sampleData.getValuesInSet());
-      Collections.sort(valueList);
+      sort(valueList);
       values = valueList;
     } else {
       values = sampleData.getValuesInSet();

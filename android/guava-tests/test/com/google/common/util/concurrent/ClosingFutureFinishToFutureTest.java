@@ -20,13 +20,16 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.util.concurrent.ClosingFuture.ClosingCallable;
 import com.google.common.util.concurrent.ClosingFuture.DeferredCloser;
 import java.io.Closeable;
 import java.util.concurrent.ExecutionException;
+import org.jspecify.annotations.NullUnmarked;
 
 /** Tests for {@link ClosingFuture} that exercise {@link ClosingFuture#finishToFuture()}. */
+@NullUnmarked
 public class ClosingFutureFinishToFutureTest extends AbstractClosingFutureTest {
   public void testFinishToFuture_throwsIfCalledTwice() throws Exception {
     ClosingFuture<Closeable> closingFuture =
@@ -39,11 +42,11 @@ public class ClosingFutureFinishToFutureTest extends AbstractClosingFutureTest {
             },
             executor);
     FluentFuture<Closeable> unused = closingFuture.finishToFuture();
-    try {
-      FluentFuture<Closeable> unused2 = closingFuture.finishToFuture();
-      fail("should have thrown");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          FluentFuture<Closeable> unused2 = closingFuture.finishToFuture();
+        });
   }
 
   public void testFinishToFuture_throwsAfterCallingFinishToValueAndCloser() throws Exception {
@@ -57,11 +60,11 @@ public class ClosingFutureFinishToFutureTest extends AbstractClosingFutureTest {
             },
             executor);
     closingFuture.finishToValueAndCloser(new NoOpValueAndCloserConsumer<>(), directExecutor());
-    try {
-      FluentFuture<Closeable> unused = closingFuture.finishToFuture();
-      fail("should have thrown");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          FluentFuture<Closeable> unused = closingFuture.finishToFuture();
+        });
   }
 
   public void testFinishToFuture_preventsFurtherDerivation() {

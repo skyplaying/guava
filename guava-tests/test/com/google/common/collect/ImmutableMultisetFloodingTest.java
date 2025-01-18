@@ -16,17 +16,21 @@
 
 package com.google.common.collect;
 
-import com.google.common.annotations.GwtCompatible;
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.Arrays;
-import java.util.List;
+import static java.lang.Math.log;
+import static java.util.Arrays.asList;
 
-@GwtCompatible
+import com.google.common.annotations.GwtIncompatible;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.List;
+import org.jspecify.annotations.NullUnmarked;
+
+@GwtIncompatible
+@NullUnmarked
 public class ImmutableMultisetFloodingTest extends AbstractHashFloodingTest<Multiset<Object>> {
   public ImmutableMultisetFloodingTest() {
     super(
-        Arrays.asList(ConstructionPathway.values()),
-        n -> n * Math.log(n),
+        asList(ConstructionPathway.values()),
+        n -> n * log(n),
         ImmutableList.of(
             QueryOp.create(
                 "count",

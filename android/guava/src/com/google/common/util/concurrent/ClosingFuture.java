@@ -32,6 +32,7 @@ import static com.google.common.util.concurrent.Futures.getDone;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.nonCancellationPropagating;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
+import static com.google.common.util.concurrent.Platform.restoreInterruptIfIsInterruptedException;
 import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -47,7 +48,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.DoNotMock;
 import com.google.j2objc.annotations.RetainedWith;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -58,9 +58,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A step in a pipeline of an asynchronous computation. When the last step in the computation is
@@ -192,11 +190,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 // TODO(dpb): Consider reusing one CloseableList for the entire pipeline, modulo combinations.
 @DoNotMock("Use ClosingFuture.from(Futures.immediate*Future)")
 @J2ktIncompatible
-@ElementTypesAreNonnullByDefault
 // TODO(dpb): GWT compatibility.
 public final class ClosingFuture<V extends @Nullable Object> {
 
-  private static final Logger logger = Logger.getLogger(ClosingFuture.class.getName());
+  private static final LazyLogger logger = new LazyLogger(ClosingFuture.class);
 
   /**
    * An object that can capture objects to be closed later, when a {@link ClosingFuture} pipeline is
@@ -234,8 +231,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
      */
     @CanIgnoreReturnValue
     @ParametricNullness
-    // TODO(b/163345357): Widen bound to AutoCloseable once we require API Level 19.
-    public <C extends @Nullable Object & @Nullable Closeable> C eventuallyClose(
+    public <C extends @Nullable Object & @Nullable AutoCloseable> C eventuallyClose(
         @ParametricNullness C closeable, Executor closingExecutor) {
       checkNotNull(closingExecutor);
       if (closeable != null) {
@@ -384,7 +380,24 @@ public final class ClosingFuture<V extends @Nullable Object> {
    */
   public static <V extends @Nullable Object> ClosingFuture<V> submit(
       ClosingCallable<V> callable, Executor executor) {
-    return new ClosingFuture<>(callable, executor);
+    checkNotNull(callable);
+    CloseableList closeables = new CloseableList();
+    TrustedListenableFutureTask<V> task =
+        TrustedListenableFutureTask.create(
+            new Callable<V>() {
+              @Override
+              @ParametricNullness
+              public V call() throws Exception {
+                return callable.call(closeables.closer);
+              }
+
+              @Override
+              public String toString() {
+                return callable.toString();
+              }
+            });
+    executor.execute(task);
+    return new ClosingFuture<>(task, closeables);
   }
 
   /**
@@ -396,7 +409,30 @@ public final class ClosingFuture<V extends @Nullable Object> {
    */
   public static <V extends @Nullable Object> ClosingFuture<V> submitAsync(
       AsyncClosingCallable<V> callable, Executor executor) {
-    return new ClosingFuture<>(callable, executor);
+    checkNotNull(callable);
+    CloseableList closeables = new CloseableList();
+    TrustedListenableFutureTask<V> task =
+        TrustedListenableFutureTask.create(
+            new AsyncCallable<V>() {
+              @Override
+              public ListenableFuture<V> call() throws Exception {
+                CloseableList newCloseables = new CloseableList();
+                try {
+                  ClosingFuture<V> closingFuture = callable.call(newCloseables.closer);
+                  closingFuture.becomeSubsumedInto(closeables);
+                  return closingFuture.future;
+                } finally {
+                  closeables.add(newCloseables, directExecutor());
+                }
+              }
+
+              @Override
+              public String toString() {
+                return callable.toString();
+              }
+            });
+    executor.execute(task);
+    return new ClosingFuture<>(task, closeables);
   }
 
   /**
@@ -407,7 +443,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    * when the pipeline is done, use {@link #submit(ClosingCallable, Executor)} instead.
    */
   public static <V extends @Nullable Object> ClosingFuture<V> from(ListenableFuture<V> future) {
-    return new ClosingFuture<V>(future);
+    return new ClosingFuture<>(future);
   }
 
   /**
@@ -432,17 +468,16 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *     ClosingFuture#from}.
    */
   @Deprecated
-  // TODO(b/163345357): Widen bound to AutoCloseable once we require API Level 19.
-  public static <C extends @Nullable Object & @Nullable Closeable>
+  public static <C extends @Nullable Object & @Nullable AutoCloseable>
       ClosingFuture<C> eventuallyClosing(
           ListenableFuture<C> future, final Executor closingExecutor) {
     checkNotNull(closingExecutor);
     final ClosingFuture<C> closingFuture = new ClosingFuture<>(nonCancellationPropagating(future));
     Futures.addCallback(
         future,
-        new FutureCallback<@Nullable Closeable>() {
+        new FutureCallback<@Nullable AutoCloseable>() {
           @Override
-          public void onSuccess(@CheckForNull Closeable result) {
+          public void onSuccess(@Nullable AutoCloseable result) {
             closingFuture.closeables.closer.eventuallyClose(result, closingExecutor);
           }
 
@@ -586,57 +621,16 @@ public final class ClosingFuture<V extends @Nullable Object> {
   }
 
   private final AtomicReference<State> state = new AtomicReference<>(OPEN);
-  private final CloseableList closeables = new CloseableList();
+  private final CloseableList closeables;
   private final FluentFuture<V> future;
 
   private ClosingFuture(ListenableFuture<V> future) {
+    this(future, new CloseableList());
+  }
+
+  private ClosingFuture(ListenableFuture<V> future, CloseableList closeables) {
     this.future = FluentFuture.from(future);
-  }
-
-  private ClosingFuture(final ClosingCallable<V> callable, Executor executor) {
-    checkNotNull(callable);
-    TrustedListenableFutureTask<V> task =
-        TrustedListenableFutureTask.create(
-            new Callable<V>() {
-              @Override
-              @ParametricNullness
-              public V call() throws Exception {
-                return callable.call(closeables.closer);
-              }
-
-              @Override
-              public String toString() {
-                return callable.toString();
-              }
-            });
-    executor.execute(task);
-    this.future = task;
-  }
-
-  private ClosingFuture(final AsyncClosingCallable<V> callable, Executor executor) {
-    checkNotNull(callable);
-    TrustedListenableFutureTask<V> task =
-        TrustedListenableFutureTask.create(
-            new AsyncCallable<V>() {
-              @Override
-              public ListenableFuture<V> call() throws Exception {
-                CloseableList newCloseables = new CloseableList();
-                try {
-                  ClosingFuture<V> closingFuture = callable.call(newCloseables.closer);
-                  closingFuture.becomeSubsumedInto(closeables);
-                  return closingFuture.future;
-                } finally {
-                  closeables.add(newCloseables, directExecutor());
-                }
-              }
-
-              @Override
-              public String toString() {
-                return callable.toString();
-              }
-            });
-    executor.execute(task);
-    this.future = task;
+    this.closeables = closeables;
   }
 
   /**
@@ -678,7 +672,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *
    * <p>After calling this method, you may not call {@link #finishToFuture()}, {@link
    * #finishToValueAndCloser(ValueAndCloserConsumer, Executor)}, or any other derivation method on
-   * this {@code ClosingFuture}.
+   * the original {@code ClosingFuture} instance.
    *
    * @param function transforms the value of this step to the value of the derived step
    * @param executor executor to run the function in
@@ -771,7 +765,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *
    * <p>After calling this method, you may not call {@link #finishToFuture()}, {@link
    * #finishToValueAndCloser(ValueAndCloserConsumer, Executor)}, or any other derivation method on
-   * this {@code ClosingFuture}.
+   * the original {@code ClosingFuture} instance.
    *
    * @param function transforms the value of this step to a {@code ClosingFuture} with the value of
    *     the derived step
@@ -862,7 +856,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *
    * <p>After calling this method, you may not call {@link #finishToFuture()}, {@link
    * #finishToValueAndCloser(ValueAndCloserConsumer, Executor)}, or any other derivation method on
-   * this {@code ClosingFuture}.
+   * the original {@code ClosingFuture} instance.
    *
    * @param exceptionType the exception type that triggers use of {@code fallback}. The exception
    *     type is matched against this step's exception. "This step's exception" means the cause of
@@ -955,7 +949,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *
    * <p>After calling this method, you may not call {@link #finishToFuture()}, {@link
    * #finishToValueAndCloser(ValueAndCloserConsumer, Executor)}, or any other derivation method on
-   * this {@code ClosingFuture}.
+   * the original {@code ClosingFuture} instance.
    *
    * @param exceptionType the exception type that triggers use of {@code fallback}. The exception
    *     type is matched against this step's exception. "This step's exception" means the cause of
@@ -1012,13 +1006,13 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *
    * <p>After calling this method, you may not call {@link
    * #finishToValueAndCloser(ValueAndCloserConsumer, Executor)}, this method, or any other
-   * derivation method on this {@code ClosingFuture}.
+   * derivation method on the original {@code ClosingFuture} instance.
    *
    * @return a {@link Future} that represents the final value or exception of the pipeline
    */
   public FluentFuture<V> finishToFuture() {
     if (compareAndUpdateState(OPEN, WILL_CLOSE)) {
-      logger.log(FINER, "will close {0}", this);
+      logger.get().log(FINER, "will close {0}", this);
       future.addListener(
           new Runnable() {
             @Override
@@ -1057,7 +1051,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    * receiver can store the {@link ValueAndCloser} outside the receiver for later synchronous use.
    *
    * <p>After calling this method, you may not call {@link #finishToFuture()}, this method again, or
-   * any other derivation method on this {@code ClosingFuture}.
+   * any other derivation method on the original {@code ClosingFuture} instance.
    *
    * @param consumer a callback whose method will be called (using {@code executor}) when this
    *     operation is done
@@ -1117,8 +1111,9 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *     completed normally; {@code true} otherwise
    */
   @CanIgnoreReturnValue
+  @SuppressWarnings("Interruption") // We are propagating an interrupt from a caller.
   public boolean cancel(boolean mayInterruptIfRunning) {
-    logger.log(FINER, "cancelling {0}", this);
+    logger.get().log(FINER, "cancelling {0}", this);
     boolean cancelled = future.cancel(mayInterruptIfRunning);
     if (cancelled) {
       close();
@@ -1127,7 +1122,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
   }
 
   private void close() {
-    logger.log(FINER, "closing {0}", this);
+    logger.get().log(FINER, "closing {0}", this);
     closeables.close();
   }
 
@@ -1226,9 +1221,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
    *           .closing(executor);
    * }</pre>
    */
-  // TODO(cpovirk): Use simple name instead of fully qualified after we stop building with JDK 8.
-  @com.google.errorprone.annotations.DoNotMock(
-      "Use ClosingFuture.whenAllSucceed() or .whenAllComplete() instead.")
+  @DoNotMock("Use ClosingFuture.whenAllSucceed() or .whenAllComplete() instead.")
   public static class Combiner {
 
     private final CloseableList closeables = new CloseableList();
@@ -1378,7 +1371,6 @@ public final class ClosingFuture<V extends @Nullable Object> {
           ? Futures.whenAllSucceed(inputFutures())
           : Futures.whenAllComplete(inputFutures());
     }
-
 
     private ImmutableList<FluentFuture<?>> inputFutures() {
       return FluentIterable.from(inputs)
@@ -2128,15 +2120,16 @@ public final class ClosingFuture<V extends @Nullable Object> {
     return toStringHelper(this).add("state", state.get()).addValue(future).toString();
   }
 
+  @SuppressWarnings({"removal", "Finalize"}) // b/260137033
   @Override
   protected void finalize() {
     if (state.get().equals(OPEN)) {
-      logger.log(SEVERE, "Uh oh! An open ClosingFuture has leaked and will close: {0}", this);
+      logger.get().log(SEVERE, "Uh oh! An open ClosingFuture has leaked and will close: {0}", this);
       FluentFuture<V> unused = finishToFuture();
     }
   }
 
-  private static void closeQuietly(@CheckForNull final Closeable closeable, Executor executor) {
+  private static void closeQuietly(final @Nullable AutoCloseable closeable, Executor executor) {
     if (closeable == null) {
       return;
     }
@@ -2145,14 +2138,27 @@ public final class ClosingFuture<V extends @Nullable Object> {
           () -> {
             try {
               closeable.close();
-            } catch (IOException | RuntimeException e) {
-              logger.log(WARNING, "thrown by close()", e);
+            } catch (Exception e) {
+              /*
+               * In guava-jre, any kind of Exception may be thrown because `closeable` has type
+               * `AutoCloseable`.
+               *
+               * In guava-android, the only kinds of Exception that may be thrown are
+               * RuntimeException and IOException because `closeable` has type `Closeable`—except
+               * that we have to account for sneaky checked exception.
+               */
+              restoreInterruptIfIsInterruptedException(e);
+              logger.get().log(WARNING, "thrown by close()", e);
             }
           });
     } catch (RejectedExecutionException e) {
-      if (logger.isLoggable(WARNING)) {
-        logger.log(
-            WARNING, String.format("while submitting close to %s; will close inline", executor), e);
+      if (logger.get().isLoggable(WARNING)) {
+        logger
+            .get()
+            .log(
+                WARNING,
+                String.format("while submitting close to %s; will close inline", executor),
+                e);
       }
       closeQuietly(closeable, directExecutor());
     }
@@ -2171,11 +2177,11 @@ public final class ClosingFuture<V extends @Nullable Object> {
   }
 
   // TODO(dpb): Should we use a pair of ArrayLists instead of an IdentityHashMap?
-  private static final class CloseableList extends IdentityHashMap<Closeable, Executor>
+  private static final class CloseableList extends IdentityHashMap<AutoCloseable, Executor>
       implements Closeable {
     private final DeferredCloser closer = new DeferredCloser(this);
     private volatile boolean closed;
-    @CheckForNull private volatile CountDownLatch whenClosed;
+    private volatile @Nullable CountDownLatch whenClosed;
 
     <V extends @Nullable Object, U extends @Nullable Object>
         ListenableFuture<U> applyClosingFunction(
@@ -2216,7 +2222,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
         }
         closed = true;
       }
-      for (Map.Entry<Closeable, Executor> entry : entrySet()) {
+      for (Map.Entry<AutoCloseable, Executor> entry : entrySet()) {
         closeQuietly(entry.getKey(), entry.getValue());
       }
       clear();
@@ -2225,7 +2231,7 @@ public final class ClosingFuture<V extends @Nullable Object> {
       }
     }
 
-    void add(@CheckForNull Closeable closeable, Executor executor) {
+    void add(@Nullable AutoCloseable closeable, Executor executor) {
       checkNotNull(executor);
       if (closeable == null) {
         return;

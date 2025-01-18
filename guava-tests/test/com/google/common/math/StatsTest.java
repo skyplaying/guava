@@ -77,6 +77,7 @@ import static java.lang.Double.NaN;
 import static java.lang.Double.POSITIVE_INFINITY;
 import static java.lang.Math.sqrt;
 import static java.util.Arrays.stream;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.math.StatsTesting.ManyValues;
@@ -89,6 +90,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.DoubleSummaryStatistics;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link Stats}. This tests instances created by both {@link Stats#of} and {@link
@@ -96,6 +98,7 @@ import junit.framework.TestCase;
  *
  * @author Pete Gillin
  */
+@NullUnmarked
 public class StatsTest extends TestCase {
 
   public void testCount() {
@@ -114,16 +117,8 @@ public class StatsTest extends TestCase {
   }
 
   public void testMean() {
-    try {
-      EMPTY_STATS_VARARGS.mean();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.mean();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.mean());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.mean());
     assertThat(ONE_VALUE_STATS.mean()).isWithin(ALLOWED_ERROR).of(ONE_VALUE);
     assertThat(Stats.of(POSITIVE_INFINITY).mean()).isPositiveInfinity();
     assertThat(Stats.of(NEGATIVE_INFINITY).mean()).isNegativeInfinity();
@@ -206,17 +201,9 @@ public class StatsTest extends TestCase {
   }
 
   public void testPopulationVariance() {
-    try {
-      EMPTY_STATS_VARARGS.populationVariance();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.populationVariance();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    assertThat(ONE_VALUE_STATS.populationVariance()).isWithin(0.0).of(0.0);
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.populationVariance());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.populationVariance());
+    assertThat(ONE_VALUE_STATS.populationVariance()).isEqualTo(0.0);
     assertThat(Stats.of(POSITIVE_INFINITY).populationVariance()).isNaN();
     assertThat(Stats.of(NEGATIVE_INFINITY).populationVariance()).isNaN();
     assertThat(Stats.of(NaN).populationVariance()).isNaN();
@@ -266,17 +253,11 @@ public class StatsTest extends TestCase {
   }
 
   public void testPopulationStandardDeviation() {
-    try {
-      EMPTY_STATS_VARARGS.populationStandardDeviation();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.populationStandardDeviation();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    assertThat(ONE_VALUE_STATS.populationStandardDeviation()).isWithin(0.0).of(0.0);
+    assertThrows(
+        IllegalStateException.class, () -> EMPTY_STATS_VARARGS.populationStandardDeviation());
+    assertThrows(
+        IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.populationStandardDeviation());
+    assertThat(ONE_VALUE_STATS.populationStandardDeviation()).isEqualTo(0.0);
     assertThat(TWO_VALUES_STATS.populationStandardDeviation())
         .isWithin(ALLOWED_ERROR)
         .of(sqrt(TWO_VALUES_SUM_OF_SQUARES_OF_DELTAS / 2));
@@ -307,21 +288,9 @@ public class StatsTest extends TestCase {
   }
 
   public void testSampleVariance() {
-    try {
-      EMPTY_STATS_VARARGS.sampleVariance();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.sampleVariance();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      ONE_VALUE_STATS.sampleVariance();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.sampleVariance());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.sampleVariance());
+    assertThrows(IllegalStateException.class, () -> ONE_VALUE_STATS.sampleVariance());
     assertThat(TWO_VALUES_STATS.sampleVariance())
         .isWithin(ALLOWED_ERROR)
         .of(TWO_VALUES_SUM_OF_SQUARES_OF_DELTAS);
@@ -352,21 +321,9 @@ public class StatsTest extends TestCase {
   }
 
   public void testSampleStandardDeviation() {
-    try {
-      EMPTY_STATS_VARARGS.sampleStandardDeviation();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.sampleStandardDeviation();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      ONE_VALUE_STATS.sampleStandardDeviation();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.sampleStandardDeviation());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.sampleStandardDeviation());
+    assertThrows(IllegalStateException.class, () -> ONE_VALUE_STATS.sampleStandardDeviation());
     assertThat(TWO_VALUES_STATS.sampleStandardDeviation())
         .isWithin(ALLOWED_ERROR)
         .of(sqrt(TWO_VALUES_SUM_OF_SQUARES_OF_DELTAS));
@@ -397,16 +354,8 @@ public class StatsTest extends TestCase {
   }
 
   public void testMax() {
-    try {
-      EMPTY_STATS_VARARGS.max();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.max();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.max());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.max());
     assertThat(ONE_VALUE_STATS.max()).isEqualTo(ONE_VALUE);
     assertThat(Stats.of(POSITIVE_INFINITY).max()).isPositiveInfinity();
     assertThat(Stats.of(NEGATIVE_INFINITY).max()).isNegativeInfinity();
@@ -434,16 +383,8 @@ public class StatsTest extends TestCase {
   }
 
   public void testMin() {
-    try {
-      EMPTY_STATS_VARARGS.min();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
-    try {
-      EMPTY_STATS_ITERABLE.min();
-      fail("Expected IllegalStateException");
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_VARARGS.min());
+    assertThrows(IllegalStateException.class, () -> EMPTY_STATS_ITERABLE.min());
     assertThat(ONE_VALUE_STATS.min()).isEqualTo(ONE_VALUE);
     assertThat(Stats.of(POSITIVE_INFINITY).min()).isPositiveInfinity();
     assertThat(Stats.of(NEGATIVE_INFINITY).min()).isNegativeInfinity();
@@ -505,28 +446,6 @@ public class StatsTest extends TestCase {
     assertThat(stats.max()).isEqualTo(MEGA_STREAM_MAX);
   }
 
-  public void testBoxedDoubleStreamToStats() {
-    Stats stats = megaPrimitiveDoubleStream().boxed().collect(toStats());
-    assertThat(stats.count()).isEqualTo(MEGA_STREAM_COUNT);
-    assertThat(stats.mean()).isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT).of(MEGA_STREAM_MEAN);
-    assertThat(stats.populationVariance())
-        .isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT)
-        .of(MEGA_STREAM_POPULATION_VARIANCE);
-    assertThat(stats.min()).isEqualTo(MEGA_STREAM_MIN);
-    assertThat(stats.max()).isEqualTo(MEGA_STREAM_MAX);
-  }
-
-  public void testBoxedBigDecimalStreamToStats() {
-    Stats stats = megaPrimitiveDoubleStream().mapToObj(BigDecimal::valueOf).collect(toStats());
-    assertThat(stats.count()).isEqualTo(MEGA_STREAM_COUNT);
-    assertThat(stats.mean()).isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT).of(MEGA_STREAM_MEAN);
-    assertThat(stats.populationVariance())
-        .isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT)
-        .of(MEGA_STREAM_POPULATION_VARIANCE);
-    assertThat(stats.min()).isEqualTo(MEGA_STREAM_MIN);
-    assertThat(stats.max()).isEqualTo(MEGA_STREAM_MAX);
-  }
-
   public void testEqualsAndHashCode() {
     new EqualsTester()
         .addEqualityGroup(
@@ -570,16 +489,8 @@ public class StatsTest extends TestCase {
   }
 
   public void testMeanOf() {
-    try {
-      Stats.meanOf();
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
-    try {
-      Stats.meanOf(ImmutableList.<Number>of());
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Stats.meanOf());
+    assertThrows(IllegalArgumentException.class, () -> Stats.meanOf(ImmutableList.<Number>of()));
     assertThat(Stats.meanOf(ONE_VALUE)).isWithin(ALLOWED_ERROR).of(ONE_VALUE);
     assertThat(Stats.meanOf(POSITIVE_INFINITY)).isPositiveInfinity();
     assertThat(Stats.meanOf(NEGATIVE_INFINITY)).isNegativeInfinity();
@@ -630,19 +541,11 @@ public class StatsTest extends TestCase {
   }
 
   public void testFromByteArray_withNullInputThrowsNullPointerException() {
-    try {
-      Stats.fromByteArray(null);
-      fail("Expected NullPointerException");
-    } catch (NullPointerException expected) {
-    }
+    assertThrows(NullPointerException.class, () -> Stats.fromByteArray(null));
   }
 
   public void testFromByteArray_withEmptyArrayInputThrowsIllegalArgumentException() {
-    try {
-      Stats.fromByteArray(new byte[0]);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Stats.fromByteArray(new byte[0]));
   }
 
   public void testFromByteArray_withTooLongArrayInputThrowsIllegalArgumentException() {
@@ -653,11 +556,7 @@ public class StatsTest extends TestCase {
             .put(buffer)
             .putChar('.')
             .array();
-    try {
-      Stats.fromByteArray(tooLongByteArray);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Stats.fromByteArray(tooLongByteArray));
   }
 
   public void testFromByteArrayWithTooShortArrayInputThrowsIllegalArgumentException() {
@@ -667,11 +566,7 @@ public class StatsTest extends TestCase {
             .order(ByteOrder.LITTLE_ENDIAN)
             .put(buffer, 0, Stats.BYTES - 1)
             .array();
-    try {
-      Stats.fromByteArray(tooShortByteArray);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Stats.fromByteArray(tooShortByteArray));
   }
 
   public void testEquivalentStreams() {
@@ -708,5 +603,27 @@ public class StatsTest extends TestCase {
     } else {
       assertThat(actual).isWithin(ALLOWED_ERROR).of(expected);
     }
+  }
+
+  public void testBoxedDoubleStreamToStats() {
+    Stats stats = megaPrimitiveDoubleStream().boxed().collect(toStats());
+    assertThat(stats.count()).isEqualTo(MEGA_STREAM_COUNT);
+    assertThat(stats.mean()).isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT).of(MEGA_STREAM_MEAN);
+    assertThat(stats.populationVariance())
+        .isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT)
+        .of(MEGA_STREAM_POPULATION_VARIANCE);
+    assertThat(stats.min()).isEqualTo(MEGA_STREAM_MIN);
+    assertThat(stats.max()).isEqualTo(MEGA_STREAM_MAX);
+  }
+
+  public void testBoxedBigDecimalStreamToStats() {
+    Stats stats = megaPrimitiveDoubleStream().mapToObj(BigDecimal::valueOf).collect(toStats());
+    assertThat(stats.count()).isEqualTo(MEGA_STREAM_COUNT);
+    assertThat(stats.mean()).isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT).of(MEGA_STREAM_MEAN);
+    assertThat(stats.populationVariance())
+        .isWithin(ALLOWED_ERROR * MEGA_STREAM_COUNT)
+        .of(MEGA_STREAM_POPULATION_VARIANCE);
+    assertThat(stats.min()).isEqualTo(MEGA_STREAM_MIN);
+    assertThat(stats.max()).isEqualTo(MEGA_STREAM_MAX);
   }
 }

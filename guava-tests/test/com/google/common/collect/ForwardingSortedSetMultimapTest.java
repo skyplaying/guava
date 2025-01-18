@@ -20,12 +20,14 @@ import com.google.common.base.Function;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.ForwardingWrapperTester;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link ForwardingSortedSetMultimap}.
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class ForwardingSortedSetMultimapTest extends TestCase {
 
   @SuppressWarnings("rawtypes")
@@ -33,10 +35,10 @@ public class ForwardingSortedSetMultimapTest extends TestCase {
     new ForwardingWrapperTester()
         .testForwarding(
             SortedSetMultimap.class,
-            new Function<SortedSetMultimap, SortedSetMultimap>() {
+            new Function<SortedSetMultimap, SortedSetMultimap<?, ?>>() {
               @Override
-              public SortedSetMultimap apply(SortedSetMultimap delegate) {
-                return wrap(delegate);
+              public SortedSetMultimap<?, ?> apply(SortedSetMultimap delegate) {
+                return wrap((SortedSetMultimap<?, ?>) delegate);
               }
             });
   }

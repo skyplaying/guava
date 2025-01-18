@@ -20,17 +20,20 @@ import static com.google.common.cache.TestingCacheLoaders.exceptionLoader;
 import static com.google.common.cache.TestingRemovalListeners.queuingRemovalListener;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.TestingRemovalListeners.QueuingRemovalListener;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * {@link LoadingCache} tests for caches with a maximum size of zero.
  *
  * @author mike nonemacher
  */
+@NullUnmarked
 public class NullCacheTest extends TestCase {
   QueuingRemovalListener<Object, Object> listener;
 
@@ -100,12 +103,7 @@ public class NullCacheTest extends TestCase {
             .removalListener(listener)
             .build(constantLoader(null));
 
-    try {
-      cache.getUnchecked(new Object());
-      fail();
-    } catch (InvalidCacheLoadException e) {
-      /* expected */
-    }
+    assertThrows(InvalidCacheLoadException.class, () -> cache.getUnchecked(new Object()));
 
     assertTrue(listener.isEmpty());
     checkEmpty(cache);
@@ -119,12 +117,9 @@ public class NullCacheTest extends TestCase {
             .removalListener(listener)
             .build(exceptionLoader(e));
 
-    try {
-      map.getUnchecked(new Object());
-      fail();
-    } catch (UncheckedExecutionException uee) {
-      assertThat(uee).hasCauseThat().isSameInstanceAs(e);
-    }
+    UncheckedExecutionException uee =
+        assertThrows(UncheckedExecutionException.class, () -> map.getUnchecked(new Object()));
+    assertThat(uee).hasCauseThat().isSameInstanceAs(e);
     assertTrue(listener.isEmpty());
     checkEmpty(map);
   }

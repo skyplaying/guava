@@ -16,16 +16,20 @@
 
 package com.google.common.io;
 
+import static org.junit.Assert.assertThrows;
+
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.Writer;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link AppendableWriter}.
  *
  * @author Alan Green
  */
+@NullUnmarked
 public class AppendableWriterTest extends IoTestCase {
 
   /** Helper class for testing behavior with Flushable and Closeable targets. */
@@ -113,17 +117,9 @@ public class AppendableWriterTest extends IoTestCase {
     writer.write("Hi");
     writer.close();
 
-    try {
-      writer.write(" Greg");
-      fail("Should have thrown IOException due to writer already closed");
-    } catch (IOException expected) {
-    }
+    assertThrows(IOException.class, () -> writer.write(" Greg"));
 
-    try {
-      writer.flush();
-      fail("Should have thrown IOException due to writer already closed");
-    } catch (IOException expected) {
-    }
+    assertThrows(IOException.class, () -> writer.flush());
 
     // close()ing already closed writer is allowed
     writer.close();

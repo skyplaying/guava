@@ -19,16 +19,20 @@ package com.google.common.math;
 import static com.google.common.math.MathTesting.ALL_BIGINTEGER_CANDIDATES;
 import static com.google.common.math.MathTesting.FINITE_DOUBLE_CANDIDATES;
 import static com.google.common.math.MathTesting.POSITIVE_FINITE_DOUBLE_CANDIDATES;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link DoubleUtils}.
  *
  * @author Louis Wasserman
  */
+@NullUnmarked
 public class DoubleUtilsTest extends TestCase {
   @AndroidIncompatible // no FpUtils and no Math.nextDown in old versions
   public void testNextDown() throws Exception {
@@ -58,18 +62,14 @@ public class DoubleUtilsTest extends TestCase {
   }
 
   public void testEnsureNonNegative() {
-    assertEquals(0.0, DoubleUtils.ensureNonNegative(0.0));
+    assertThat(DoubleUtils.ensureNonNegative(0.0)).isEqualTo(0.0);
     for (double positiveValue : POSITIVE_FINITE_DOUBLE_CANDIDATES) {
-      assertEquals(positiveValue, DoubleUtils.ensureNonNegative(positiveValue));
-      assertEquals(0.0, DoubleUtils.ensureNonNegative(-positiveValue));
+      assertThat(DoubleUtils.ensureNonNegative(positiveValue)).isEqualTo(positiveValue);
+      assertThat(DoubleUtils.ensureNonNegative(-positiveValue)).isEqualTo(0.0);
     }
-    assertEquals(Double.POSITIVE_INFINITY, DoubleUtils.ensureNonNegative(Double.POSITIVE_INFINITY));
-    assertEquals(0.0, DoubleUtils.ensureNonNegative(Double.NEGATIVE_INFINITY));
-    try {
-      DoubleUtils.ensureNonNegative(Double.NaN);
-      fail("Expected IllegalArgumentException from ensureNonNegative(Double.NaN)");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThat(DoubleUtils.ensureNonNegative(Double.POSITIVE_INFINITY)).isPositiveInfinity();
+    assertThat(DoubleUtils.ensureNonNegative(Double.NEGATIVE_INFINITY)).isEqualTo(0.0);
+    assertThrows(IllegalArgumentException.class, () -> DoubleUtils.ensureNonNegative(Double.NaN));
   }
 
   public void testOneBits() {

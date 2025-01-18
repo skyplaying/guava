@@ -22,12 +22,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Set;
+import org.jspecify.annotations.NullUnmarked;
 
 /** Utility methods used in various common.graph tests. */
+@NullUnmarked
 final class TestUtil {
   static final String ERROR_ELEMENT_NOT_IN_GRAPH = "not an element of this graph";
   static final String ERROR_NODE_NOT_IN_GRAPH =
       "Should not be allowed to pass a node that is not an element of the graph.";
+  static final String ERROR_ELEMENT_REMOVED = "used to generate this set";
   private static final String NODE_STRING = "Node";
   private static final String EDGE_STRING = "Edge";
 
@@ -46,6 +49,16 @@ final class TestUtil {
   static void assertEdgeNotInGraphErrorMessage(Throwable throwable) {
     assertThat(throwable).hasMessageThat().startsWith(EDGE_STRING);
     assertThat(throwable).hasMessageThat().contains(ERROR_ELEMENT_NOT_IN_GRAPH);
+  }
+
+  static void assertNodeRemovedFromGraphErrorMessage(Throwable throwable) {
+    assertThat(throwable).hasMessageThat().startsWith(NODE_STRING);
+    assertThat(throwable).hasMessageThat().contains(ERROR_ELEMENT_REMOVED);
+  }
+
+  static void assertEdgeRemovedFromGraphErrorMessage(Throwable throwable) {
+    assertThat(throwable).hasMessageThat().startsWith(EDGE_STRING);
+    assertThat(throwable).hasMessageThat().contains(ERROR_ELEMENT_REMOVED);
   }
 
   static void assertStronglyEquivalent(Graph<?> graphA, Graph<?> graphB) {

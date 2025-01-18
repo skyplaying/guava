@@ -21,8 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.annotations.GwtCompatible;
 import java.io.Serializable;
 import java.util.Map;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static utility methods pertaining to {@code com.google.common.base.Function} instances; see that
@@ -38,7 +37,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 2.0
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public final class Functions {
   private Functions() {}
 
@@ -55,9 +53,9 @@ public final class Functions {
    * {@code equals}, {@code hashCode} or {@code toString} behavior of the returned function. A
    * future migration to {@code java.util.function} will not preserve this behavior.
    *
-   * <p><b>For Java 8 users:</b> use the method reference {@code Object::toString} instead. In the
+   * <p><b>Java 8+ users:</b> use the method reference {@code Object::toString} instead. In the
    * future, when this class requires Java 8, this method will be deprecated. See {@link Function}
-   * for more important information about the Java 8 transition.
+   * for more important information about the Java 8+ transition.
    */
   public static Function<Object, String> toStringFunction() {
     return ToStringFunction.INSTANCE;
@@ -79,7 +77,12 @@ public final class Functions {
     }
   }
 
-  /** Returns the identity function. */
+  /**
+   * Returns the identity function.
+   *
+   * <p><b>Discouraged:</b> Prefer using a lambda like {@code v -> v}, which is shorter and often
+   * more readable.
+   */
   // implementation is "fully variant"; E has become a "pass-through" type
   @SuppressWarnings("unchecked")
   public static <E extends @Nullable Object> Function<E, E> identity() {
@@ -91,8 +94,7 @@ public final class Functions {
     INSTANCE;
 
     @Override
-    @CheckForNull
-    public Object apply(@CheckForNull Object o) {
+    public @Nullable Object apply(@Nullable Object o) {
       return o;
     }
 
@@ -111,7 +113,7 @@ public final class Functions {
    * can use {@link com.google.common.collect.Maps#asConverter Maps.asConverter} instead to get a
    * function that also supports reverse conversion.
    *
-   * <p><b>Java 8 users:</b> if you are okay with {@code null} being returned for an unrecognized
+   * <p><b>Java 8+ users:</b> if you are okay with {@code null} being returned for an unrecognized
    * key (instead of an exception being thrown), you can use the method reference {@code map::get}
    * instead.
    */
@@ -125,7 +127,7 @@ public final class Functions {
    * this method returns {@code defaultValue} for all inputs that do not belong to the map's key
    * set. See also {@link #forMap(Map)}, which throws an exception in this case.
    *
-   * <p><b>Java 8 users:</b> you can just write the lambda expression {@code k ->
+   * <p><b>Java 8+ users:</b> you can just write the lambda expression {@code k ->
    * map.getOrDefault(k, defaultValue)} instead.
    *
    * @param map source map that determines the function behavior
@@ -157,7 +159,7 @@ public final class Functions {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object o) {
+    public boolean equals(@Nullable Object o) {
       if (o instanceof FunctionForMapNoDefault) {
         FunctionForMapNoDefault<?, ?> that = (FunctionForMapNoDefault<?, ?>) o;
         return map.equals(that.map);
@@ -199,7 +201,7 @@ public final class Functions {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object o) {
+    public boolean equals(@Nullable Object o) {
       if (o instanceof ForMapWithDefault) {
         ForMapWithDefault<?, ?> that = (ForMapWithDefault<?, ?>) o;
         return map.equals(that.map) && Objects.equal(defaultValue, that.defaultValue);
@@ -225,7 +227,7 @@ public final class Functions {
    * Returns the composition of two functions. For {@code f: A->B} and {@code g: B->C}, composition
    * is defined as the function h such that {@code h(a) == g(f(a))} for each {@code a}.
    *
-   * <p><b>Java 8 users:</b> use {@code g.compose(f)} or (probably clearer) {@code f.andThen(g)}
+   * <p><b>Java 8+ users:</b> use {@code g.compose(f)} or (probably clearer) {@code f.andThen(g)}
    * instead.
    *
    * @param g the second function to apply
@@ -256,7 +258,7 @@ public final class Functions {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof FunctionComposition) {
         FunctionComposition<?, ?, ?> that = (FunctionComposition<?, ?, ?>) obj;
         return f.equals(that.f) && g.equals(that.g);
@@ -284,14 +286,16 @@ public final class Functions {
    * <p>The returned function is <i>consistent with equals</i> (as documented at {@link
    * Function#apply}) if and only if {@code predicate} is itself consistent with equals.
    *
-   * <p><b>Java 8 users:</b> use the method reference {@code predicate::test} instead.
+   * <p><b>Java 8+ users:</b> use the method reference {@code predicate::test} instead.
    */
   public static <T extends @Nullable Object> Function<T, Boolean> forPredicate(
       Predicate<T> predicate) {
     return new PredicateFunction<>(predicate);
   }
 
-  /** @see Functions#forPredicate */
+  /**
+   * @see Functions#forPredicate
+   */
   private static class PredicateFunction<T extends @Nullable Object>
       implements Function<T, Boolean>, Serializable {
     private final Predicate<T> predicate;
@@ -306,7 +310,7 @@ public final class Functions {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof PredicateFunction) {
         PredicateFunction<?> that = (PredicateFunction<?>) obj;
         return predicate.equals(that.predicate);
@@ -330,7 +334,7 @@ public final class Functions {
   /**
    * Returns a function that ignores its input and always returns {@code value}.
    *
-   * <p><b>Java 8 users:</b> use the lambda expression {@code o -> value} instead.
+   * <p><b>Java 8+ users:</b> use the lambda expression {@code o -> value} instead.
    *
    * @param value the constant value for the function to return
    * @return a function that always returns {@code value}
@@ -350,12 +354,12 @@ public final class Functions {
 
     @Override
     @ParametricNullness
-    public E apply(@CheckForNull Object from) {
+    public E apply(@Nullable Object from) {
       return value;
     }
 
     @Override
-    public boolean equals(@CheckForNull Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof ConstantFunction) {
         ConstantFunction<?> that = (ConstantFunction<?>) obj;
         return Objects.equal(value, that.value);
@@ -379,7 +383,7 @@ public final class Functions {
   /**
    * Returns a function that ignores its input and returns the result of {@code supplier.get()}.
    *
-   * <p><b>Java 8 users:</b> use the lambda expression {@code o -> supplier.get()} instead.
+   * <p><b>Java 8+ users:</b> use the lambda expression {@code o -> supplier.get()} instead.
    *
    * @since 10.0
    */
@@ -388,7 +392,9 @@ public final class Functions {
     return new SupplierFunction<>(supplier);
   }
 
-  /** @see Functions#forSupplier */
+  /**
+   * @see Functions#forSupplier
+   */
   private static class SupplierFunction<F extends @Nullable Object, T extends @Nullable Object>
       implements Function<F, T>, Serializable {
 
@@ -405,7 +411,7 @@ public final class Functions {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object obj) {
+    public boolean equals(@Nullable Object obj) {
       if (obj instanceof SupplierFunction) {
         SupplierFunction<?, ?> that = (SupplierFunction<?, ?>) obj;
         return this.supplier.equals(that.supplier);

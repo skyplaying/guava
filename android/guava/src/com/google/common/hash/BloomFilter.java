@@ -16,6 +16,7 @@ package com.google.common.hash;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
@@ -27,6 +28,7 @@ import com.google.common.math.LongMath;
 import com.google.common.primitives.SignedBytes;
 import com.google.common.primitives.UnsignedBytes;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.InlineMe;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -36,8 +38,8 @@ import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.RoundingMode;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import java.util.stream.Collector;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Bloom filter for instances of {@code T}. A Bloom filter offers an approximate containment test
@@ -67,7 +69,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 11.0 (thread-safe since 23.0)
  */
 @Beta
-@ElementTypesAreNonnullByDefault
 public final class BloomFilter<T extends @Nullable Object> implements Predicate<T>, Serializable {
   /**
    * A strategy to translate T instances, to {@code numHashFunctions} bit indexes.
@@ -119,6 +120,12 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
   /** The strategy we employ to map an element T to {@code numHashFunctions} bit indexes. */
   private final Strategy strategy;
 
+  /** Natural logarithm of 2, used to optimize calculations in Bloom filter sizing. */
+  private static final double LOG_TWO = Math.log(2);
+
+  /** Square of the natural logarithm of 2, reused to optimize the bit size calculation. */
+  private static final double SQUARED_LOG_TWO = LOG_TWO * LOG_TWO;
+
   /** Creates a BloomFilter. */
   private BloomFilter(
       LockFreeBitArray bits, int numHashFunctions, Funnel<? super T> funnel, Strategy strategy) {
@@ -138,7 +145,7 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
    * @since 12.0
    */
   public BloomFilter<T> copy() {
-    return new BloomFilter<T>(bits.copy(), numHashFunctions, funnel, strategy);
+    return new BloomFilter<>(bits.copy(), numHashFunctions, funnel, strategy);
   }
 
   /**
@@ -153,6 +160,7 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
    * @deprecated Provided only to satisfy the {@link Predicate} interface; use {@link #mightContain}
    *     instead.
    */
+  @InlineMe(replacement = "this.mightContain(input)")
   @Deprecated
   @Override
   public boolean apply(@ParametricNullness T input) {
@@ -278,7 +286,7 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
   }
 
   @Override
-  public boolean equals(@CheckForNull Object object) {
+  public boolean equals(@Nullable Object object) {
     if (object == this) {
       return true;
     }
@@ -295,6 +303,76 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
   @Override
   public int hashCode() {
     return Objects.hashCode(numHashFunctions, funnel, strategy, bits);
+  }
+
+  /**
+   * Returns a {@code Collector} expecting the specified number of insertions, and yielding a {@link
+   * BloomFilter} with false positive probability 3%.
+   *
+   * <p>Note that if the {@code Collector} receives significantly more elements than specified, the
+   * resulting {@code BloomFilter} will suffer a sharp deterioration of its false positive
+   * probability.
+   *
+   * <p>The constructed {@code BloomFilter} will be serializable if the provided {@code Funnel<T>}
+   * is.
+   *
+   * <p>It is recommended that the funnel be implemented as a Java enum. This has the benefit of
+   * ensuring proper serialization and deserialization, which is important since {@link #equals}
+   * also relies on object identity of funnels.
+   *
+   * @param funnel the funnel of T's that the constructed {@code BloomFilter} will use
+   * @param expectedInsertions the number of expected insertions to the constructed {@code
+   *     BloomFilter}; must be positive
+   * @return a {@code Collector} generating a {@code BloomFilter} of the received elements
+   * @since 33.4.0 (but since 23.0 in the JRE flavor)
+   */
+  @SuppressWarnings("Java7ApiChecker")
+  @IgnoreJRERequirement // Users will use this only if they're already using streams.
+  public static <T extends @Nullable Object> Collector<T, ?, BloomFilter<T>> toBloomFilter(
+      Funnel<? super T> funnel, long expectedInsertions) {
+    return toBloomFilter(funnel, expectedInsertions, 0.03);
+  }
+
+  /**
+   * Returns a {@code Collector} expecting the specified number of insertions, and yielding a {@link
+   * BloomFilter} with the specified expected false positive probability.
+   *
+   * <p>Note that if the {@code Collector} receives significantly more elements than specified, the
+   * resulting {@code BloomFilter} will suffer a sharp deterioration of its false positive
+   * probability.
+   *
+   * <p>The constructed {@code BloomFilter} will be serializable if the provided {@code Funnel<T>}
+   * is.
+   *
+   * <p>It is recommended that the funnel be implemented as a Java enum. This has the benefit of
+   * ensuring proper serialization and deserialization, which is important since {@link #equals}
+   * also relies on object identity of funnels.
+   *
+   * @param funnel the funnel of T's that the constructed {@code BloomFilter} will use
+   * @param expectedInsertions the number of expected insertions to the constructed {@code
+   *     BloomFilter}; must be positive
+   * @param fpp the desired false positive probability (must be positive and less than 1.0)
+   * @return a {@code Collector} generating a {@code BloomFilter} of the received elements
+   * @since 33.4.0 (but since 23.0 in the JRE flavor)
+   */
+  @SuppressWarnings("Java7ApiChecker")
+  @IgnoreJRERequirement // Users will use this only if they're already using streams.
+  public static <T extends @Nullable Object> Collector<T, ?, BloomFilter<T>> toBloomFilter(
+      Funnel<? super T> funnel, long expectedInsertions, double fpp) {
+    checkNotNull(funnel);
+    checkArgument(
+        expectedInsertions >= 0, "Expected insertions (%s) must be >= 0", expectedInsertions);
+    checkArgument(fpp > 0.0, "False positive probability (%s) must be > 0.0", fpp);
+    checkArgument(fpp < 1.0, "False positive probability (%s) must be < 1.0", fpp);
+    return Collector.of(
+        () -> BloomFilter.create(funnel, expectedInsertions, fpp),
+        BloomFilter::put,
+        (bf1, bf2) -> {
+          bf1.putAll(bf2);
+          return bf1;
+        },
+        Collector.Characteristics.UNORDERED,
+        Collector.Characteristics.CONCURRENT);
   }
 
   /**
@@ -367,9 +445,9 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
      * optimalM(1000, 0.0000000000000001) = 76680 which is less than 10kb. Who cares!
      */
     long numBits = optimalNumOfBits(expectedInsertions, fpp);
-    int numHashFunctions = optimalNumOfHashFunctions(expectedInsertions, numBits);
+    int numHashFunctions = optimalNumOfHashFunctions(fpp);
     try {
-      return new BloomFilter<T>(new LockFreeBitArray(numBits), numHashFunctions, funnel, strategy);
+      return new BloomFilter<>(new LockFreeBitArray(numBits), numHashFunctions, funnel, strategy);
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Could not create BloomFilter of " + numBits + " bits", e);
     }
@@ -437,18 +515,16 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
   // 4) For optimal k: m = -nlnp / ((ln2) ^ 2)
 
   /**
-   * Computes the optimal k (number of hashes per element inserted in Bloom filter), given the
-   * expected insertions and total number of bits in the Bloom filter.
+   * Computes the optimal number of hash functions (k) for a given false positive probability (p).
    *
    * <p>See http://en.wikipedia.org/wiki/File:Bloom_filter_fp_probability.svg for the formula.
    *
-   * @param n expected insertions (must be positive)
-   * @param m total number of bits in Bloom filter (must be positive)
+   * @param p desired false positive probability (must be between 0 and 1, exclusive)
    */
   @VisibleForTesting
-  static int optimalNumOfHashFunctions(long n, long m) {
-    // (m / n) * log(2), but avoid truncation due to division!
-    return Math.max(1, (int) Math.round((double) m / n * Math.log(2)));
+  static int optimalNumOfHashFunctions(double p) {
+    // -log(p) / log(2), ensuring the result is rounded to avoid truncation.
+    return max(1, (int) Math.round(-Math.log(p) / LOG_TWO));
   }
 
   /**
@@ -466,7 +542,7 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
     if (p == 0) {
       p = Double.MIN_VALUE;
     }
-    return (long) (-n * Math.log(p) / (Math.log(2) * Math.log(2)));
+    return (long) (-n * Math.log(p) / SQUARED_LOG_TWO);
   }
 
   private Object writeReplace() {
@@ -530,6 +606,7 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
    * @throws IOException if the InputStream throws an {@code IOException}, or if its data does not
    *     appear to be a BloomFilter serialized using the {@linkplain #writeTo(OutputStream)} method.
    */
+  @SuppressWarnings("CatchingUnchecked") // sneaky checked exception
   public static <T extends @Nullable Object> BloomFilter<T> readFrom(
       InputStream in, Funnel<? super T> funnel) throws IOException {
     checkNotNull(in, "InputStream");
@@ -553,8 +630,10 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
         dataArray.putData(i, din.readLong());
       }
 
-      return new BloomFilter<T>(dataArray, numHashFunctions, funnel, strategy);
-    } catch (RuntimeException e) {
+      return new BloomFilter<>(dataArray, numHashFunctions, funnel, strategy);
+    } catch (IOException e) {
+      throw e;
+    } catch (Exception e) { // sneaky checked exception
       String message =
           "Unable to deserialize BloomFilter from InputStream."
               + " strategyOrdinal: "
@@ -566,4 +645,6 @@ public final class BloomFilter<T extends @Nullable Object> implements Predicate<
       throw new IOException(message, e);
     }
   }
+
+  private static final long serialVersionUID = 0xdecaf;
 }

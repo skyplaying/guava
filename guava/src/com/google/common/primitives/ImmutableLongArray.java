@@ -31,7 +31,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.LongConsumer;
 import java.util.stream.LongStream;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable array of {@code long} values, with an API resembling {@link List}.
@@ -85,7 +85,6 @@ import javax.annotation.CheckForNull;
  */
 @GwtCompatible
 @Immutable
-@ElementTypesAreNonnullByDefault
 public final class ImmutableLongArray implements Serializable {
   private static final ImmutableLongArray EMPTY = new ImmutableLongArray(new long[0]);
 
@@ -168,7 +167,11 @@ public final class ImmutableLongArray implements Serializable {
     return builder().addAll(values).build();
   }
 
-  /** Returns an immutable array containing all the values from {@code stream}, in order. */
+  /**
+   * Returns an immutable array containing all the values from {@code stream}, in order.
+   *
+   * @since 22.0 (but only since 33.4.0 in the Android flavor)
+   */
   public static ImmutableLongArray copyOf(LongStream stream) {
     // Note this uses very different growth behavior from copyOf(Iterable) and the builder.
     long[] array = stream.toArray();
@@ -269,6 +272,8 @@ public final class ImmutableLongArray implements Serializable {
     /**
      * Appends all values from {@code stream}, in order, to the end of the values the built {@link
      * ImmutableLongArray} will contain.
+     *
+     * @since 22.0 (but only since 33.4.0 in the Android flavor)
      */
     @CanIgnoreReturnValue
     public Builder addAll(LongStream stream) {
@@ -410,7 +415,11 @@ public final class ImmutableLongArray implements Serializable {
     return indexOf(target) >= 0;
   }
 
-  /** Invokes {@code consumer} for each value contained in this array, in order. */
+  /**
+   * Invokes {@code consumer} for each value contained in this array, in order.
+   *
+   * @since 22.0 (but only since 33.4.0 in the Android flavor)
+   */
   public void forEach(LongConsumer consumer) {
     checkNotNull(consumer);
     for (int i = start; i < end; i++) {
@@ -418,7 +427,11 @@ public final class ImmutableLongArray implements Serializable {
     }
   }
 
-  /** Returns a stream over the values in this array, in order. */
+  /**
+   * Returns a stream over the values in this array, in order.
+   *
+   * @since 22.0 (but only since 33.4.0 in the Android flavor)
+   */
   public LongStream stream() {
     return Arrays.stream(array, start, end);
   }
@@ -442,7 +455,11 @@ public final class ImmutableLongArray implements Serializable {
         : new ImmutableLongArray(array, start + startIndex, start + endIndex);
   }
 
-  private Spliterator.OfLong spliterator() {
+  /*
+   * We declare this as package-private, rather than private, to avoid generating a synthetic
+   * accessor method (under -target 8) that would lack the Android flavor's @IgnoreJRERequirement.
+   */
+  Spliterator.OfLong spliterator() {
     return Spliterators.spliterator(array, start, end, Spliterator.IMMUTABLE | Spliterator.ORDERED);
   }
 
@@ -482,17 +499,17 @@ public final class ImmutableLongArray implements Serializable {
     }
 
     @Override
-    public boolean contains(@CheckForNull Object target) {
+    public boolean contains(@Nullable Object target) {
       return indexOf(target) >= 0;
     }
 
     @Override
-    public int indexOf(@CheckForNull Object target) {
+    public int indexOf(@Nullable Object target) {
       return target instanceof Long ? parent.indexOf((Long) target) : -1;
     }
 
     @Override
-    public int lastIndexOf(@CheckForNull Object target) {
+    public int lastIndexOf(@Nullable Object target) {
       return target instanceof Long ? parent.lastIndexOf((Long) target) : -1;
     }
 
@@ -508,7 +525,7 @@ public final class ImmutableLongArray implements Serializable {
     }
 
     @Override
-    public boolean equals(@CheckForNull Object object) {
+    public boolean equals(@Nullable Object object) {
       if (object instanceof AsList) {
         AsList that = (AsList) object;
         return this.parent.equals(that.parent);
@@ -548,7 +565,7 @@ public final class ImmutableLongArray implements Serializable {
    * values as this one, in the same order.
    */
   @Override
-  public boolean equals(@CheckForNull Object object) {
+  public boolean equals(@Nullable Object object) {
     if (object == this) {
       return true;
     }

@@ -16,15 +16,19 @@
 
 package com.google.common.util.concurrent;
 
+import static org.junit.Assert.assertThrows;
+
 import com.google.common.testing.NullPointerTester;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link Atomics}.
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class AtomicsTest extends TestCase {
 
   private static final Object OBJECT = new Object();
@@ -44,19 +48,11 @@ public class AtomicsTest extends TestCase {
     for (int i = 0; i < length; ++i) {
       assertEquals(null, refArray.get(i));
     }
-    try {
-      refArray.get(length);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> refArray.get(length));
   }
 
   public void testNewReferenceArray_withNegativeLength() throws Exception {
-    try {
-      Atomics.newReferenceArray(-1);
-      fail();
-    } catch (NegativeArraySizeException expected) {
-    }
+    assertThrows(NegativeArraySizeException.class, () -> Atomics.newReferenceArray(-1));
   }
 
   public void testNewReferenceArray_withStringArray() throws Exception {
@@ -65,19 +61,11 @@ public class AtomicsTest extends TestCase {
     for (int i = 0; i < array.length; ++i) {
       assertEquals(array[i], refArray.get(i));
     }
-    try {
-      refArray.get(array.length);
-      fail();
-    } catch (IndexOutOfBoundsException expected) {
-    }
+    assertThrows(IndexOutOfBoundsException.class, () -> refArray.get(array.length));
   }
 
   public void testNewReferenceArray_withNullArray() throws Exception {
-    try {
-      Atomics.newReferenceArray(null);
-      fail();
-    } catch (NullPointerException expected) {
-    }
+    assertThrows(NullPointerException.class, () -> Atomics.newReferenceArray(null));
   }
 
   public void testNullPointers() {

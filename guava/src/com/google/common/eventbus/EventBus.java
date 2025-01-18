@@ -15,9 +15,9 @@
 package com.google.common.eventbus;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.util.concurrent.MoreExecutors;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.Locale;
@@ -83,7 +83,7 @@ import java.util.logging.Logger;
  *       to <a href="https://github.com/google/guava/issues/3311">more verbose</a>.
  * </ul>
  *
- -->
+
  *
  * <h2>EventBus Summary</h2>
  *
@@ -150,7 +150,6 @@ import java.util.logging.Logger;
  * @author Cliff Biffle
  * @since 10.0
  */
-@ElementTypesAreNonnullByDefault
 public class EventBus {
 
   private static final Logger logger = Logger.getLogger(EventBus.class.getName());
@@ -175,10 +174,7 @@ public class EventBus {
    */
   public EventBus(String identifier) {
     this(
-        identifier,
-        MoreExecutors.directExecutor(),
-        Dispatcher.perThreadDispatchQueue(),
-        LoggingHandler.INSTANCE);
+        identifier, directExecutor(), Dispatcher.perThreadDispatchQueue(), LoggingHandler.INSTANCE);
   }
 
   /**
@@ -188,11 +184,7 @@ public class EventBus {
    * @since 16.0
    */
   public EventBus(SubscriberExceptionHandler exceptionHandler) {
-    this(
-        "default",
-        MoreExecutors.directExecutor(),
-        Dispatcher.perThreadDispatchQueue(),
-        exceptionHandler);
+    this("default", directExecutor(), Dispatcher.perThreadDispatchQueue(), exceptionHandler);
   }
 
   EventBus(

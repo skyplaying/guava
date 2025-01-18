@@ -14,7 +14,6 @@
 
 package com.google.common.util.concurrent;
 
-
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -23,7 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Imposes a time limit on method calls.
@@ -36,7 +35,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 @J2ktIncompatible
 @GwtIncompatible
 @SuppressWarnings("GoodTime") // should have java.time.Duration overloads
-@ElementTypesAreNonnullByDefault
 public interface TimeLimiter {
 
   /**

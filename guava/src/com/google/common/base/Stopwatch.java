@@ -96,7 +96,6 @@ import java.util.concurrent.TimeUnit;
  */
 @GwtCompatible(emulated = true)
 @SuppressWarnings("GoodTime") // lots of violations
-@ElementTypesAreNonnullByDefault
 public final class Stopwatch {
   private final Ticker ticker;
   private boolean isRunning;
@@ -222,7 +221,7 @@ public final class Stopwatch {
    * Returns the current elapsed time shown on this stopwatch as a {@link Duration}. Unlike {@link
    * #elapsed(TimeUnit)}, this method does not lose any precision due to rounding.
    *
-   * @since 22.0
+   * @since 22.0 (but only since 33.4.0 in the Android flavor)
    */
   @J2ktIncompatible
   @GwtIncompatible
@@ -281,8 +280,7 @@ public final class Stopwatch {
         return "h";
       case DAYS:
         return "d";
-      default:
-        throw new AssertionError();
     }
+    throw new AssertionError();
   }
 }

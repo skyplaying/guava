@@ -19,6 +19,8 @@ package com.google.common.collect.testing;
 import com.google.common.annotations.GwtCompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Collection;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.junit.Ignore;
 
 /**
@@ -28,8 +30,11 @@ import org.junit.Ignore;
  * @author Kevin Bourrillion
  */
 @GwtCompatible
-@Ignore // Affects only Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
-public abstract class AbstractCollectionTester<E>
+@Ignore("test runners must not instantiate and run this directly, only via suites we build")
+// @Ignore affects the Android test runner, which respects JUnit 4 annotations on JUnit 3 tests.
+@SuppressWarnings("JUnit4ClassUsedInJUnit3")
+@NullMarked
+public abstract class AbstractCollectionTester<E extends @Nullable Object>
     extends AbstractContainerTester<Collection<E>, E> {
 
   // TODO: replace this with an accessor.
@@ -48,12 +53,16 @@ public abstract class AbstractCollectionTester<E>
     return collection;
   }
 
-  /** @see AbstractContainerTester#resetContainer() */
+  /**
+   * @see AbstractContainerTester#resetContainer()
+   */
   protected void resetCollection() {
     resetContainer();
   }
 
-  /** @return an array of the proper size with {@code null} inserted into the middle element. */
+  /**
+   * @return an array of the proper size with {@code null} inserted into the middle element.
+   */
   protected E[] createArrayWithNullElement() {
     E[] array = createSamplesArray();
     array[getNullLocation()] = null;

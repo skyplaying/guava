@@ -16,6 +16,8 @@
 
 package com.google.common.eventbus;
 
+import static org.junit.Assert.assertThrows;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -24,12 +26,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Test case for {@link EventBus}.
  *
  * @author Cliff Biffle
  */
+@NullUnmarked
 public class EventBusTest extends TestCase {
   private static final String EVENT = "Hello";
   private static final String BUS_IDENTIFIER = "test-bus";
@@ -90,7 +94,7 @@ public class EventBusTest extends TestCase {
 
     // Two additional event types: Object and Comparable<?> (played by Integer)
     Object objEvent = new Object();
-    Object compEvent = new Integer(6);
+    Object compEvent = 6;
 
     bus.post(EVENT);
     bus.post(objEvent);
@@ -119,7 +123,7 @@ public class EventBusTest extends TestCase {
     final RecordingSubscriberExceptionHandler handler = new RecordingSubscriberExceptionHandler();
     final EventBus eventBus = new EventBus(handler);
     final RuntimeException exception =
-        new RuntimeException("but culottes have a tendancy to ride up!");
+        new RuntimeException("but culottes have a tendency to ride up!");
     final Object subscriber =
         new Object() {
           @Subscribe
@@ -157,11 +161,7 @@ public class EventBusTest extends TestCase {
           }
         };
     eventBus.register(subscriber);
-    try {
-      eventBus.post(EVENT);
-    } catch (RuntimeException e) {
-      fail("Exception should not be thrown.");
-    }
+    eventBus.post(EVENT);
   }
 
   public void testDeadEventForwarding() {
@@ -194,12 +194,7 @@ public class EventBusTest extends TestCase {
   public void testUnregister() {
     StringCatcher catcher1 = new StringCatcher();
     StringCatcher catcher2 = new StringCatcher();
-    try {
-      bus.unregister(catcher1);
-      fail("Attempting to unregister an unregistered object succeeded");
-    } catch (IllegalArgumentException expected) {
-      // OK.
-    }
+    assertThrows(IllegalArgumentException.class, () -> bus.unregister(catcher1));
 
     bus.register(catcher1);
     bus.post(EVENT);
@@ -222,12 +217,7 @@ public class EventBusTest extends TestCase {
         "Shouldn't catch any more events when unregistered.", expectedEvents, catcher1.getEvents());
     assertEquals("Two correct events should be delivered.", expectedEvents, catcher2.getEvents());
 
-    try {
-      bus.unregister(catcher1);
-      fail("Attempting to unregister an unregistered object succeeded");
-    } catch (IllegalArgumentException expected) {
-      // OK.
-    }
+    assertThrows(IllegalArgumentException.class, () -> bus.unregister(catcher1));
 
     bus.unregister(catcher2);
     bus.post(EVENT);
@@ -293,11 +283,7 @@ public class EventBusTest extends TestCase {
       @Subscribe
       public void toInt(int i) {}
     }
-    try {
-      bus.register(new SubscribesToPrimitive());
-      fail("should have thrown");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> bus.register(new SubscribesToPrimitive()));
   }
 
   /** Records thrown exception information. */

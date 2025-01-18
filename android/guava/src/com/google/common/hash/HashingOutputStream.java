@@ -24,11 +24,10 @@ import java.io.OutputStream;
 /**
  * An {@link OutputStream} that maintains a hash of the data written to it.
  *
- * @author Nick Piepmeier
+ * @author Zoe Piepmeier
  * @since 16.0
  */
 @Beta
-@ElementTypesAreNonnullByDefault
 public final class HashingOutputStream extends FilterOutputStream {
   private final Hasher hasher;
 

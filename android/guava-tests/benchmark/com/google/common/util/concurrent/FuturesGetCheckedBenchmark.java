@@ -44,8 +44,10 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.zip.DataFormatException;
 import javax.security.auth.RefreshFailedException;
+import org.jspecify.annotations.NullUnmarked;
 
 /** Microbenchmark for {@link Futures#getChecked}. */
+@NullUnmarked
 public class FuturesGetCheckedBenchmark {
   private enum Validator {
     NON_CACHING_WITH_CONSTRUCTOR_CHECK(nonCachingWithConstructorCheckValidator()),
@@ -100,6 +102,7 @@ public class FuturesGetCheckedBenchmark {
   @Param Validator validator;
   @Param Result result;
   @Param ExceptionType exceptionType;
+
   /**
    * The number of other exception types in the cache of known-good exceptions and the number of
    * other {@code ClassValue} entries for the exception type to be tested. This lets us evaluate

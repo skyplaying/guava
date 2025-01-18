@@ -21,6 +21,7 @@ import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
+import static com.google.common.util.concurrent.Internal.toNanosSaturated;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static com.google.common.util.concurrent.Service.State.FAILED;
 import static com.google.common.util.concurrent.Service.State.NEW;
@@ -51,18 +52,19 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.util.concurrent.Service.State;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import com.google.j2objc.annotations.J2ObjCIncompatible;
 import com.google.j2objc.annotations.WeakOuter;
 import java.lang.ref.WeakReference;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A manager for monitoring and controlling a set of {@linkplain Service services}. This class
@@ -120,9 +122,8 @@ import java.util.logging.Logger;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class ServiceManager implements ServiceManagerBridge {
-  private static final Logger logger = Logger.getLogger(ServiceManager.class.getName());
+  private static final LazyLogger logger = new LazyLogger(ServiceManager.class);
   private static final ListenerCallQueue.Event<Listener> HEALTHY_EVENT =
       new ListenerCallQueue.Event<Listener>() {
         @Override
@@ -158,6 +159,9 @@ public final class ServiceManager implements ServiceManagerBridge {
    * @since 15.0 (present as an interface in 14.0)
    */
   public abstract static class Listener {
+    /** Constructor for use by subclasses. */
+    public Listener() {}
+
     /**
      * Called when the service initially becomes healthy.
      *
@@ -205,10 +209,13 @@ public final class ServiceManager implements ServiceManagerBridge {
     if (copy.isEmpty()) {
       // Having no services causes the manager to behave strangely. Notably, listeners are never
       // fired. To avoid this we substitute a placeholder service.
-      logger.log(
-          Level.WARNING,
-          "ServiceManager configured with no services.  Is your application configured properly?",
-          new EmptyServiceManagerWarning());
+      logger
+          .get()
+          .log(
+              Level.WARNING,
+              "ServiceManager configured with no services.  Is your application configured"
+                  + " properly?",
+              new EmptyServiceManagerWarning());
       copy = ImmutableList.<Service>of(new NoOpService());
     }
     this.state = new ServiceManagerState(copy);
@@ -275,7 +282,7 @@ public final class ServiceManager implements ServiceManagerBridge {
         // service or listener). Our contract says it is safe to call this method if
         // all services were NEW when it was called, and this has already been verified above, so we
         // don't propagate the exception.
-        logger.log(Level.WARNING, "Unable to start Service " + service, e);
+        logger.get().log(Level.WARNING, "Unable to start Service " + service, e);
       }
     }
     return this;
@@ -291,6 +298,23 @@ public final class ServiceManager implements ServiceManagerBridge {
    */
   public void awaitHealthy() {
     state.awaitHealthy();
+  }
+
+  /**
+   * Waits for the {@link ServiceManager} to become {@linkplain #isHealthy() healthy} for no more
+   * than the given time. The manager will become healthy after all the component services have
+   * reached the {@linkplain State#RUNNING running} state.
+   *
+   * @param timeout the maximum time to wait
+   * @throws TimeoutException if not all of the services have finished starting within the deadline
+   * @throws IllegalStateException if the service manager reaches a state from which it cannot
+   *     become {@linkplain #isHealthy() healthy}.
+   * @since 33.4.0 (but since 28.0 in the JRE flavor)
+   */
+  @SuppressWarnings("Java7ApiChecker")
+  @IgnoreJRERequirement // Users will use this only if they're already using Duration.
+  public void awaitHealthy(Duration timeout) throws TimeoutException {
+    awaitHealthy(toNanosSaturated(timeout), TimeUnit.NANOSECONDS);
   }
 
   /**
@@ -330,6 +354,21 @@ public final class ServiceManager implements ServiceManagerBridge {
    */
   public void awaitStopped() {
     state.awaitStopped();
+  }
+
+  /**
+   * Waits for the all the services to reach a terminal state for no more than the given time. After
+   * this method returns all services will either be {@linkplain Service.State#TERMINATED
+   * terminated} or {@linkplain Service.State#FAILED failed}.
+   *
+   * @param timeout the maximum time to wait
+   * @throws TimeoutException if not all of the services have stopped within the deadline
+   * @since 33.4.0 (but since 28.0 in the JRE flavor)
+   */
+  @SuppressWarnings("Java7ApiChecker")
+  @IgnoreJRERequirement // Users will use this only if they're already using Duration.
+  public void awaitStopped(Duration timeout) throws TimeoutException {
+    awaitStopped(toNanosSaturated(timeout), TimeUnit.NANOSECONDS);
   }
 
   /**
@@ -385,6 +424,23 @@ public final class ServiceManager implements ServiceManagerBridge {
     return state.startupTimes();
   }
 
+  /**
+   * Returns the service load times. This value will only return startup times for services that
+   * have finished starting.
+   *
+   * @return Map of services and their corresponding startup time, the map entries will be ordered
+   *     by startup time.
+   * @since 33.4.0 (but since 31.0 in the JRE flavor)
+   */
+  @J2ObjCIncompatible
+  @SuppressWarnings("Java7ApiChecker")
+  // If users use this when they shouldn't, we hope that NewApi will catch subsequent Duration calls
+  @IgnoreJRERequirement
+  public ImmutableMap<Service, Duration> startupDurations() {
+    return ImmutableMap.copyOf(
+        Maps.<Service, Long, Duration>transformValues(startupTimes(), Duration::ofMillis));
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(ServiceManager.class)
@@ -407,7 +463,7 @@ public final class ServiceManager implements ServiceManagerBridge {
     final Multiset<State> states = servicesByState.keys();
 
     @GuardedBy("monitor")
-    final Map<Service, Stopwatch> startupTimers = Maps.newIdentityHashMap();
+    final IdentityHashMap<Service, Stopwatch> startupTimers = new IdentityHashMap<>();
 
     /**
      * These two booleans are used to mark the state as ready to start.
@@ -661,7 +717,7 @@ public final class ServiceManager implements ServiceManagerBridge {
           // N.B. if we miss the STARTING event then we may never record a startup time.
           stopwatch.stop();
           if (!(service instanceof NoOpService)) {
-            logger.log(Level.FINE, "Started {0} in {1}.", new Object[] {service, stopwatch});
+            logger.get().log(Level.FINE, "Started {0} in {1}.", new Object[] {service, stopwatch});
           }
         }
         // Queue our listeners
@@ -723,6 +779,9 @@ public final class ServiceManager implements ServiceManagerBridge {
             new IllegalStateException(
                 "Expected to be healthy after starting. The following services are not running: "
                     + Multimaps.filterKeys(servicesByState, not(equalTo(RUNNING))));
+        for (Service service : servicesByState.get(State.FAILED)) {
+          exception.addSuppressed(new FailedService(service));
+        }
         throw exception;
       }
     }
@@ -750,7 +809,7 @@ public final class ServiceManager implements ServiceManagerBridge {
       if (state != null) {
         state.transitionService(service, NEW, STARTING);
         if (!(service instanceof NoOpService)) {
-          logger.log(Level.FINE, "Starting {0}.", service);
+          logger.get().log(Level.FINE, "Starting {0}.", service);
         }
       }
     }
@@ -776,10 +835,12 @@ public final class ServiceManager implements ServiceManagerBridge {
       ServiceManagerState state = this.state.get();
       if (state != null) {
         if (!(service instanceof NoOpService)) {
-          logger.log(
-              Level.FINE,
-              "Service {0} has terminated. Previous state was: {1}",
-              new Object[] {service, from});
+          logger
+              .get()
+              .log(
+                  Level.FINE,
+                  "Service {0} has terminated. Previous state was: {1}",
+                  new Object[] {service, from});
         }
         state.transitionService(service, from, TERMINATED);
       }
@@ -792,11 +853,18 @@ public final class ServiceManager implements ServiceManagerBridge {
         // Log before the transition, so that if the process exits in response to server failure,
         // there is a higher likelihood that the cause will be in the logs.
         boolean log = !(service instanceof NoOpService);
+        /*
+         * We have already exposed startup exceptions to the user in the form of suppressed
+         * exceptions. We don't need to log those exceptions again.
+         */
+        log &= from != State.STARTING;
         if (log) {
-          logger.log(
-              Level.SEVERE,
-              "Service " + service + " has failed in the " + from + " state.",
-              failure);
+          logger
+              .get()
+              .log(
+                  Level.SEVERE,
+                  "Service " + service + " has failed in the " + from + " state.",
+                  failure);
         }
         state.transitionService(service, from, FAILED);
       }
@@ -825,4 +893,14 @@ public final class ServiceManager implements ServiceManagerBridge {
 
   /** This is never thrown but only used for logging. */
   private static final class EmptyServiceManagerWarning extends Throwable {}
+
+  private static final class FailedService extends Throwable {
+    FailedService(Service service) {
+      super(
+          service.toString(),
+          service.failureCause(),
+          false /* don't enable suppression */,
+          false /* don't calculate a stack trace. */);
+    }
+  }
 }

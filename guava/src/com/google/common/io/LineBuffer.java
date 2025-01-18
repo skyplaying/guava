@@ -32,10 +32,10 @@ import java.io.IOException;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 abstract class LineBuffer {
   /** Holds partial line contents. */
   private StringBuilder line = new StringBuilder();
+
   /** Whether a line ending with a CR is pending processing. */
   private boolean sawReturn;
 

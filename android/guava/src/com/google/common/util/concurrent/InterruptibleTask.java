@@ -23,11 +23,10 @@ import com.google.j2objc.annotations.ReflectionSupport;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.AbstractOwnableSynchronizer;
 import java.util.concurrent.locks.LockSupport;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 @GwtCompatible(emulated = true)
 @ReflectionSupport(value = ReflectionSupport.Level.FULL)
-@ElementTypesAreNonnullByDefault
 // Some Android 5.0.x Samsung devices have bugs in JDK reflection APIs that cause
 // getDeclaredField to throw a NoSuchFieldException when the field is definitely there.
 // Since this class only needs CAS on one field, we can avoid this bug by extending AtomicReference
@@ -46,6 +45,7 @@ abstract class InterruptibleTask<T extends @Nullable Object>
     @Override
     public void run() {}
   }
+
   // The thread executing the task publishes itself to the superclass' reference and the thread
   // interrupting sets DONE when it has finished interrupting.
   private static final Runnable DONE = new DoNothingRunnable();
@@ -53,7 +53,6 @@ abstract class InterruptibleTask<T extends @Nullable Object>
   // Why 1000?  WHY NOT!
   private static final int MAX_BUSY_WAIT_SPINS = 1000;
 
-  @SuppressWarnings("ThreadPriorityCheck") // The cow told me to
   @Override
   public final void run() {
     /*
@@ -93,6 +92,10 @@ abstract class InterruptibleTask<T extends @Nullable Object>
     }
   }
 
+  @SuppressWarnings({
+    "Interruption", // We are restoring an interrupt on this thread.
+    "ThreadPriorityCheck", // TODO: b/175898629 - Consider onSpinWait.
+  })
   private void waitForInterrupt(Thread currentThread) {
     /*
      * If someone called cancel(true), it is possible that the interrupted bit hasn't been set yet.
@@ -188,6 +191,7 @@ abstract class InterruptibleTask<T extends @Nullable Object>
    * Interrupts the running task. Because this internally calls {@link Thread#interrupt()} which can
    * in turn invoke arbitrary code it is not safe to call while holding a lock.
    */
+  @SuppressWarnings("Interruption") // We are implementing a user-requested interrupt.
   final void interruptTask() {
     // Since the Thread is replaced by DONE before run() invokes listeners or returns, if we succeed
     // in this CAS, there's no risk of interrupting the wrong thread or interrupting a thread that
@@ -234,7 +238,7 @@ abstract class InterruptibleTask<T extends @Nullable Object>
     }
 
     @VisibleForTesting
-    Thread getOwner() {
+    @Nullable Thread getOwner() {
       return super.getExclusiveOwnerThread();
     }
 

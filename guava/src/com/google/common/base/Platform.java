@@ -21,7 +21,7 @@ import java.util.ServiceConfigurationError;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Methods factored out so that they can be emulated differently in GWT.
@@ -29,7 +29,6 @@ import javax.annotation.CheckForNull;
  * @author Jesse Wilson
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 final class Platform {
   private static final Logger logger = Logger.getLogger(Platform.class.getName());
   private static final PatternCompiler patternCompiler = loadPatternCompiler();
@@ -42,14 +41,24 @@ final class Platform {
 
   static <T extends Enum<T>> Optional<T> getEnumIfPresent(Class<T> enumClass, String value) {
     WeakReference<? extends Enum<?>> ref = Enums.getEnumConstants(enumClass).get(value);
-    return ref == null ? Optional.<T>absent() : Optional.of(enumClass.cast(ref.get()));
+    /*
+     * We use `fromNullable` instead of `of` because `WeakReference.get()` has a nullable return
+     * type.
+     *
+     * In practice, we are very unlikely to see `null`: The `WeakReference` to the enum constant
+     * won't be cleared as long as the enum constant is referenced somewhere, and the enum constant
+     * is referenced somewhere for as long as the enum class is loaded. *Maybe in theory* the enum
+     * class could be unloaded after the above call to `getEnumConstants` but before we call
+     * `get()`, but that is vanishingly unlikely.
+     */
+    return ref == null ? Optional.absent() : Optional.fromNullable(enumClass.cast(ref.get()));
   }
 
   static String formatCompact4Digits(double value) {
     return String.format(Locale.ROOT, "%.4g", value);
   }
 
-  static boolean stringIsNullOrEmpty(@CheckForNull String string) {
+  static boolean stringIsNullOrEmpty(@Nullable String string) {
     return string == null || string.isEmpty();
   }
 
@@ -59,7 +68,7 @@ final class Platform {
    * @param string the string to test and possibly return
    * @return {@code string} if it is not null; {@code ""} otherwise
    */
-  static String nullToEmpty(@CheckForNull String string) {
+  static String nullToEmpty(@Nullable String string) {
     return (string == null) ? "" : string;
   }
 
@@ -69,8 +78,7 @@ final class Platform {
    * @param string the string to test and possibly return
    * @return {@code string} if it is not empty; {@code null} otherwise
    */
-  @CheckForNull
-  static String emptyToNull(@CheckForNull String string) {
+  static @Nullable String emptyToNull(@Nullable String string) {
     return stringIsNullOrEmpty(string) ? null : string;
   }
 
@@ -101,26 +109,5 @@ final class Platform {
     public boolean isPcreLike() {
       return true;
     }
-  }
-
-  static void checkGwtRpcEnabled() {
-    String propertyName = "guava.gwt.emergency_reenable_rpc";
-
-    if (!Boolean.parseBoolean(System.getProperty(propertyName, "false"))) {
-      throw new UnsupportedOperationException(
-          Strings.lenientFormat(
-              "We are removing GWT-RPC support for Guava types. You can temporarily reenable"
-                  + " support by setting the system property %s to true. For more about system"
-                  + " properties, see %s. For more about Guava's GWT-RPC support, see %s.",
-              propertyName,
-              "https://stackoverflow.com/q/5189914/28465",
-              "https://groups.google.com/d/msg/guava-announce/zHZTFg7YF3o/rQNnwdHeEwAJ"));
-    }
-    logger.log(
-        java.util.logging.Level.WARNING,
-        "Later in 2020, we will remove GWT-RPC support for Guava types. You are seeing this"
-            + " warning because you are sending a Guava type over GWT-RPC, which will break. You"
-            + " can identify which type by looking at the class name in the attached stack trace.",
-        new Throwable());
   }
 }

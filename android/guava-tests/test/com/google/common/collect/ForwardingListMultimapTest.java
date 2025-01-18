@@ -20,12 +20,14 @@ import com.google.common.base.Function;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.ForwardingWrapperTester;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link ForwardingListMultimap}.
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class ForwardingListMultimapTest extends TestCase {
 
   @SuppressWarnings("rawtypes")
@@ -33,10 +35,10 @@ public class ForwardingListMultimapTest extends TestCase {
     new ForwardingWrapperTester()
         .testForwarding(
             ListMultimap.class,
-            new Function<ListMultimap, ListMultimap>() {
+            new Function<ListMultimap, ListMultimap<?, ?>>() {
               @Override
-              public ListMultimap apply(ListMultimap delegate) {
-                return wrap(delegate);
+              public ListMultimap<?, ?> apply(ListMultimap delegate) {
+                return wrap((ListMultimap<?, ?>) delegate);
               }
             });
   }

@@ -16,6 +16,7 @@
 
 package com.google.common.base;
 
+import static com.google.common.base.ReflectionFreeAssertThrows.assertThrows;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -24,6 +25,7 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.testing.FakeTicker;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link Stopwatch}.
@@ -31,6 +33,7 @@ import junit.framework.TestCase;
  * @author Kevin Bourrillion
  */
 @GwtCompatible
+@NullUnmarked
 public class StopwatchTest extends TestCase {
 
   private final FakeTicker ticker = new FakeTicker();
@@ -59,11 +62,7 @@ public class StopwatchTest extends TestCase {
 
   public void testStart_whileRunning() {
     stopwatch.start();
-    try {
-      stopwatch.start();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, stopwatch::start);
     assertTrue(stopwatch.isRunning());
   }
 
@@ -74,22 +73,14 @@ public class StopwatchTest extends TestCase {
   }
 
   public void testStop_new() {
-    try {
-      stopwatch.stop();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, stopwatch::stop);
     assertFalse(stopwatch.isRunning());
   }
 
   public void testStop_alreadyStopped() {
     stopwatch.start();
     stopwatch.stop();
-    try {
-      stopwatch.stop();
-      fail();
-    } catch (IllegalStateException expected) {
-    }
+    assertThrows(IllegalStateException.class, stopwatch::stop);
     assertFalse(stopwatch.isRunning());
   }
 
@@ -167,7 +158,7 @@ public class StopwatchTest extends TestCase {
     assertEquals(1, stopwatch.elapsed(MILLISECONDS));
   }
 
-  @J2ktIncompatible // TODO(b/259213718): Enable
+  @J2ktIncompatible // TODO(b/259213718): Switch J2kt to String.format("%.4g") once that's supported
   public void testToString() {
     stopwatch.start();
     assertEquals("0.000 ns", stopwatch.toString());

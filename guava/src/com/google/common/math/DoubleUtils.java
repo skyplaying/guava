@@ -22,6 +22,7 @@ import static java.lang.Double.doubleToRawLongBits;
 import static java.lang.Double.isNaN;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Math.getExponent;
+import static java.lang.Math.max;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.VisibleForTesting;
@@ -33,7 +34,6 @@ import java.math.BigInteger;
  * @author Louis Wasserman
  */
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 final class DoubleUtils {
   private DoubleUtils() {}
 
@@ -132,7 +132,7 @@ final class DoubleUtils {
   /** Returns its argument if it is non-negative, zero if it is negative. */
   static double ensureNonNegative(double value) {
     checkArgument(!isNaN(value));
-    return Math.max(value, 0.0);
+    return max(value, 0.0);
   }
 
   @VisibleForTesting static final long ONE_BITS = 0x3ff0000000000000L;

@@ -16,11 +16,14 @@
 
 package com.google.common.net;
 
+import static com.google.common.net.ReflectionFreeAssertThrows.assertThrows;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.SerializableTester;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tests for {@link HostAndPort}
@@ -28,6 +31,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Paul Marks
  */
 @GwtCompatible
+@NullUnmarked
 public class HostAndPortTest extends TestCase {
 
   public void testFromStringWellFormed() {
@@ -160,17 +164,9 @@ public class HostAndPortTest extends TestCase {
     assertTrue(hp.hasPort());
     assertEquals(81, hp.getPort());
 
-    try {
-      HostAndPort.fromParts("gmail.com:80", 81);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> HostAndPort.fromParts("gmail.com:80", 81));
 
-    try {
-      HostAndPort.fromParts("gmail.com", -1);
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> HostAndPort.fromParts("gmail.com", -1));
   }
 
   public void testFromHost() {
@@ -182,17 +178,9 @@ public class HostAndPortTest extends TestCase {
     assertEquals("::1", hp.getHost());
     assertFalse(hp.hasPort());
 
-    try {
-      HostAndPort.fromHost("gmail.com:80");
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> HostAndPort.fromHost("gmail.com:80"));
 
-    try {
-      HostAndPort.fromHost("[gmail.com]");
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> HostAndPort.fromHost("[gmail.com]"));
   }
 
   public void testGetPortOrDefault() {
@@ -226,11 +214,9 @@ public class HostAndPortTest extends TestCase {
     assertEquals("x", HostAndPort.fromString("x:80").requireBracketsForIPv6().getHost());
 
     // Non-bracketed IPv6 fails.
-    try {
-      HostAndPort.fromString("::1").requireBracketsForIPv6();
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> HostAndPort.fromString("::1").requireBracketsForIPv6());
   }
 
   public void testToString() {

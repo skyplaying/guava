@@ -15,10 +15,10 @@
 package com.google.common.escape;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.max;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -36,7 +36,6 @@ import java.util.Map;
  * @since 15.0
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public final class ArrayBasedEscaperMap {
   /**
    * Returns a new ArrayBasedEscaperMap for creating ArrayBasedCharEscaper or
@@ -70,7 +69,7 @@ public final class ArrayBasedEscaperMap {
     if (map.isEmpty()) {
       return EMPTY_REPLACEMENT_ARRAY;
     }
-    char max = Collections.max(map.keySet());
+    char max = max(map.keySet());
     char[][] replacements = new char[max + 1][];
     for (Character c : map.keySet()) {
       replacements[c] = map.get(c).toCharArray();
@@ -79,5 +78,6 @@ public final class ArrayBasedEscaperMap {
   }
 
   // Immutable empty array for when there are no replacements.
+  @SuppressWarnings("ConstantCaseForConstants") // An empty array is a constant.
   private static final char[][] EMPTY_REPLACEMENT_ARRAY = new char[0][0];
 }

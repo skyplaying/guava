@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.util.concurrent.Monitor.Guard;
-import com.google.common.util.concurrent.Service.State; // javadoc needs this
+import com.google.common.util.concurrent.Service.State;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.errorprone.annotations.ForOverride;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
@@ -38,7 +38,7 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for implementing services that can handle {@link #doStart} and {@link #doStop}
@@ -52,7 +52,6 @@ import javax.annotation.CheckForNull;
  */
 @GwtIncompatible
 @J2ktIncompatible
-@ElementTypesAreNonnullByDefault
 public abstract class AbstractService implements Service {
   private static final ListenerCallQueue.Event<Listener> STARTING_EVENT =
       new ListenerCallQueue.Event<Listener>() {
@@ -311,7 +310,9 @@ public abstract class AbstractService implements Service {
     }
   }
 
-  /** @since 28.0 */
+  /**
+   * @since 28.0
+   */
   @Override
   public final void awaitRunning(Duration timeout) throws TimeoutException {
     Service.super.awaitRunning(timeout);
@@ -344,7 +345,9 @@ public abstract class AbstractService implements Service {
     }
   }
 
-  /** @since 28.0 */
+  /**
+   * @since 28.0
+   */
   @Override
   public final void awaitTerminated(Duration timeout) throws TimeoutException {
     Service.super.awaitTerminated(timeout);
@@ -493,13 +496,17 @@ public abstract class AbstractService implements Service {
     return snapshot.externalState();
   }
 
-  /** @since 14.0 */
+  /**
+   * @since 14.0
+   */
   @Override
   public final Throwable failureCause() {
     return snapshot.failureCause();
   }
 
-  /** @since 13.0 */
+  /**
+   * @since 13.0
+   */
   @Override
   public final void addListener(Listener listener, Executor executor) {
     listeners.addListener(listener, executor);
@@ -593,14 +600,14 @@ public abstract class AbstractService implements Service {
      * The exception that caused this service to fail. This will be {@code null} unless the service
      * has failed.
      */
-    @CheckForNull final Throwable failure;
+    final @Nullable Throwable failure;
 
     StateSnapshot(State internalState) {
       this(internalState, false, null);
     }
 
     StateSnapshot(
-        State internalState, boolean shutdownWhenStartupFinishes, @CheckForNull Throwable failure) {
+        State internalState, boolean shutdownWhenStartupFinishes, @Nullable Throwable failure) {
       checkArgument(
           !shutdownWhenStartupFinishes || internalState == STARTING,
           "shutdownWhenStartupFinishes can only be set if state is STARTING. Got %s instead.",
@@ -616,7 +623,9 @@ public abstract class AbstractService implements Service {
       this.failure = failure;
     }
 
-    /** @see Service#state() */
+    /**
+     * @see Service#state()
+     */
     State externalState() {
       if (shutdownWhenStartupFinishes && state == STARTING) {
         return STOPPING;
@@ -625,7 +634,9 @@ public abstract class AbstractService implements Service {
       }
     }
 
-    /** @see Service#failureCause() */
+    /**
+     * @see Service#failureCause()
+     */
     Throwable failureCause() {
       checkState(
           state == FAILED,

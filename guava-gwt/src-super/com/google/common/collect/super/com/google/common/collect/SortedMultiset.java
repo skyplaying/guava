@@ -18,6 +18,7 @@ package com.google.common.collect;
 
 import java.util.Comparator;
 import java.util.SortedSet;
+import org.jspecify.annotations.Nullable;
 
 /**
  * GWT emulation of {@code SortedMultiset}, with {@code elementSet} reduced to returning a {@code
@@ -26,16 +27,16 @@ import java.util.SortedSet;
  * @author Louis Wasserman
  * @since 11.0
  */
-public interface SortedMultiset<E> extends Multiset<E>, SortedIterable<E> {
+public interface SortedMultiset<E extends @Nullable Object> extends Multiset<E>, SortedIterable<E> {
   Comparator<? super E> comparator();
 
-  Entry<E> firstEntry();
+  @Nullable Entry<E> firstEntry();
 
-  Entry<E> lastEntry();
+  @Nullable Entry<E> lastEntry();
 
-  Entry<E> pollFirstEntry();
+  @Nullable Entry<E> pollFirstEntry();
 
-  Entry<E> pollLastEntry();
+  @Nullable Entry<E> pollLastEntry();
 
   /**
    * Returns a {@link SortedSet} view of the distinct elements in this multiset. (Outside GWT, this

@@ -19,6 +19,7 @@ package com.google.common.collect;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collections;
+import org.jspecify.annotations.Nullable;
 
 /**
  * GWT emulation of {@link SingletonImmutableBiMap}.
@@ -36,7 +37,7 @@ final class SingletonImmutableBiMap<K, V> extends ImmutableBiMap<K, V> {
   K singleKey;
   V singleValue;
 
-  transient SingletonImmutableBiMap<V, K> inverse;
+  @Nullable transient SingletonImmutableBiMap<V, K> inverse;
 
   SingletonImmutableBiMap(K key, V value) {
     super(Collections.singletonMap(checkNotNull(key), checkNotNull(value)));

@@ -18,6 +18,7 @@ package com.google.common.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Range;
@@ -27,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link SimpleTimeLimiter}.
@@ -34,6 +36,7 @@ import junit.framework.TestCase;
  * @author kevinb
  * @author Jens Nyman
  */
+@NullUnmarked
 public class SimpleTimeLimiterTest extends TestCase {
 
   private static final long DELAY_MS = 50;
@@ -108,11 +111,7 @@ public class SimpleTimeLimiterTest extends TestCase {
     Sample proxy = service.newProxy(target, Sample.class, NOT_ENOUGH_MS, MILLISECONDS);
     Stopwatch stopwatch = Stopwatch.createStarted();
 
-    try {
-      proxy.sleepThenReturnInput("x");
-      fail("no exception thrown");
-    } catch (UncheckedTimeoutException expected) {
-    }
+    assertThrows(UncheckedTimeoutException.class, () -> proxy.sleepThenReturnInput("x"));
 
     assertThat(stopwatch.elapsed(MILLISECONDS)).isIn(Range.closed(NOT_ENOUGH_MS, DELAY_MS * 2));
     // Is it still computing away anyway?
@@ -126,11 +125,7 @@ public class SimpleTimeLimiterTest extends TestCase {
     Sample proxy = service.newProxy(target, Sample.class, ENOUGH_MS, MILLISECONDS);
     Stopwatch stopwatch = Stopwatch.createStarted();
 
-    try {
-      proxy.sleepThenThrowException();
-      fail("no exception thrown");
-    } catch (SampleException expected) {
-    }
+    assertThrows(SampleException.class, () -> proxy.sleepThenThrowException());
 
     assertThat(stopwatch.elapsed(MILLISECONDS)).isIn(Range.closed(DELAY_MS, ENOUGH_MS));
   }
@@ -140,11 +135,7 @@ public class SimpleTimeLimiterTest extends TestCase {
     Sample proxy = service.newProxy(target, Sample.class, NOT_ENOUGH_MS, MILLISECONDS);
     Stopwatch stopwatch = Stopwatch.createStarted();
 
-    try {
-      proxy.sleepThenThrowException();
-      fail("no exception thrown");
-    } catch (UncheckedTimeoutException expected) {
-    }
+    assertThrows(UncheckedTimeoutException.class, () -> proxy.sleepThenThrowException());
 
     assertThat(stopwatch.elapsed(MILLISECONDS)).isIn(Range.closed(NOT_ENOUGH_MS, DELAY_MS * 2));
   }
@@ -159,20 +150,17 @@ public class SimpleTimeLimiterTest extends TestCase {
   }
 
   public void testCallWithTimeout_goodCallableWithNotEnoughTime() throws Exception {
-    try {
-      service.callWithTimeout(GOOD_CALLABLE, NOT_ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(
+        TimeoutException.class,
+        () -> service.callWithTimeout(GOOD_CALLABLE, NOT_ENOUGH_MS, MILLISECONDS));
   }
 
   public void testCallWithTimeout_badCallableWithEnoughTime() throws Exception {
-    try {
-      service.callWithTimeout(BAD_CALLABLE, ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (ExecutionException expected) {
-      assertThat(expected.getCause()).isInstanceOf(SampleException.class);
-    }
+    ExecutionException expected =
+        assertThrows(
+            ExecutionException.class,
+            () -> service.callWithTimeout(BAD_CALLABLE, ENOUGH_MS, MILLISECONDS));
+    assertThat(expected).hasCauseThat().isInstanceOf(SampleException.class);
   }
 
   public void testCallUninterruptiblyWithTimeout_goodCallableWithEnoughTime() throws Exception {
@@ -185,20 +173,17 @@ public class SimpleTimeLimiterTest extends TestCase {
   }
 
   public void testCallUninterruptiblyWithTimeout_goodCallableWithNotEnoughTime() throws Exception {
-    try {
-      service.callUninterruptiblyWithTimeout(GOOD_CALLABLE, NOT_ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(
+        TimeoutException.class,
+        () -> service.callUninterruptiblyWithTimeout(GOOD_CALLABLE, NOT_ENOUGH_MS, MILLISECONDS));
   }
 
   public void testCallUninterruptiblyWithTimeout_badCallableWithEnoughTime() throws Exception {
-    try {
-      service.callUninterruptiblyWithTimeout(BAD_CALLABLE, ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (ExecutionException expected) {
-      assertThat(expected.getCause()).isInstanceOf(SampleException.class);
-    }
+    ExecutionException expected =
+        assertThrows(
+            ExecutionException.class,
+            () -> service.callUninterruptiblyWithTimeout(BAD_CALLABLE, ENOUGH_MS, MILLISECONDS));
+    assertThat(expected).hasCauseThat().isInstanceOf(SampleException.class);
   }
 
   public void testRunWithTimeout_goodRunnableWithEnoughTime() throws Exception {
@@ -210,20 +195,17 @@ public class SimpleTimeLimiterTest extends TestCase {
   }
 
   public void testRunWithTimeout_goodRunnableWithNotEnoughTime() throws Exception {
-    try {
-      service.runWithTimeout(GOOD_RUNNABLE, NOT_ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(
+        TimeoutException.class,
+        () -> service.runWithTimeout(GOOD_RUNNABLE, NOT_ENOUGH_MS, MILLISECONDS));
   }
 
   public void testRunWithTimeout_badRunnableWithEnoughTime() throws Exception {
-    try {
-      service.runWithTimeout(BAD_RUNNABLE, ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (UncheckedExecutionException expected) {
-      assertThat(expected.getCause()).isInstanceOf(SampleRuntimeException.class);
-    }
+    UncheckedExecutionException expected =
+        assertThrows(
+            UncheckedExecutionException.class,
+            () -> service.runWithTimeout(BAD_RUNNABLE, ENOUGH_MS, MILLISECONDS));
+    assertThat(expected).hasCauseThat().isInstanceOf(SampleRuntimeException.class);
   }
 
   public void testRunUninterruptiblyWithTimeout_goodRunnableWithEnoughTime() throws Exception {
@@ -235,20 +217,17 @@ public class SimpleTimeLimiterTest extends TestCase {
   }
 
   public void testRunUninterruptiblyWithTimeout_goodRunnableWithNotEnoughTime() throws Exception {
-    try {
-      service.runUninterruptiblyWithTimeout(GOOD_RUNNABLE, NOT_ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (TimeoutException expected) {
-    }
+    assertThrows(
+        TimeoutException.class,
+        () -> service.runUninterruptiblyWithTimeout(GOOD_RUNNABLE, NOT_ENOUGH_MS, MILLISECONDS));
   }
 
   public void testRunUninterruptiblyWithTimeout_badRunnableWithEnoughTime() throws Exception {
-    try {
-      service.runUninterruptiblyWithTimeout(BAD_RUNNABLE, ENOUGH_MS, MILLISECONDS);
-      fail("no exception thrown");
-    } catch (UncheckedExecutionException expected) {
-      assertThat(expected.getCause()).isInstanceOf(SampleRuntimeException.class);
-    }
+    UncheckedExecutionException expected =
+        assertThrows(
+            UncheckedExecutionException.class,
+            () -> service.runUninterruptiblyWithTimeout(BAD_RUNNABLE, ENOUGH_MS, MILLISECONDS));
+    assertThat(expected).hasCauseThat().isInstanceOf(SampleRuntimeException.class);
   }
 
   private interface Sample {

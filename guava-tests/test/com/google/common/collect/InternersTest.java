@@ -16,6 +16,8 @@
 
 package com.google.common.collect;
 
+import static org.junit.Assert.assertThrows;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Interners.InternerImpl;
 import com.google.common.collect.MapMakerInternalMap.Strength;
@@ -23,12 +25,14 @@ import com.google.common.testing.GcFinalization;
 import com.google.common.testing.NullPointerTester;
 import java.lang.ref.WeakReference;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link Interners}.
  *
  * @author Kevin Bourrillion
  */
+@NullUnmarked
 public class InternersTest extends TestCase {
 
   public void testStrong_simplistic() {
@@ -42,11 +46,7 @@ public class InternersTest extends TestCase {
 
   public void testStrong_null() {
     Interner<String> pool = Interners.newStrongInterner();
-    try {
-      pool.intern(null);
-      fail();
-    } catch (NullPointerException ok) {
-    }
+    assertThrows(NullPointerException.class, () -> pool.intern(null));
   }
 
   public void testStrong_builder() {
@@ -68,11 +68,7 @@ public class InternersTest extends TestCase {
 
   public void testWeak_null() {
     Interner<String> pool = Interners.newWeakInterner();
-    try {
-      pool.intern(null);
-      fail();
-    } catch (NullPointerException ok) {
-    }
+    assertThrows(NullPointerException.class, () -> pool.intern(null));
   }
 
   public void testWeak_builder() {
@@ -114,21 +110,13 @@ public class InternersTest extends TestCase {
     new NullPointerTester().testAllPublicStaticMethods(Interners.class);
   }
 
-  public void testConcurrencyLevel_Zero() {
+  public void testConcurrencyLevel_zero() {
     Interners.InternerBuilder builder = Interners.newBuilder();
-    try {
-      builder.concurrencyLevel(0);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> builder.concurrencyLevel(0));
   }
 
-  public void testConcurrencyLevel_Negative() {
+  public void testConcurrencyLevel_negative() {
     Interners.InternerBuilder builder = Interners.newBuilder();
-    try {
-      builder.concurrencyLevel(-42);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> builder.concurrencyLevel(-42));
   }
 }

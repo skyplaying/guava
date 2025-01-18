@@ -22,18 +22,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** Implementation of {@link Futures#immediateFuture}. */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 // TODO(cpovirk): Make this final (but that may break Mockito spy calls).
 class ImmediateFuture<V extends @Nullable Object> implements ListenableFuture<V> {
   static final ListenableFuture<?> NULL = new ImmediateFuture<@Nullable Object>(null);
 
-  private static final Logger log = Logger.getLogger(ImmediateFuture.class.getName());
+  private static final LazyLogger log = new LazyLogger(ImmediateFuture.class);
 
   @ParametricNullness private final V value;
 
@@ -42,18 +39,23 @@ class ImmediateFuture<V extends @Nullable Object> implements ListenableFuture<V>
   }
 
   @Override
+  @SuppressWarnings("CatchingUnchecked") // sneaky checked exception
   public void addListener(Runnable listener, Executor executor) {
     checkNotNull(listener, "Runnable was null.");
     checkNotNull(executor, "Executor was null.");
     try {
       executor.execute(listener);
-    } catch (RuntimeException e) {
+    } catch (Exception e) { // sneaky checked exception
       // ListenableFuture's contract is that it will not throw unchecked exceptions, so log the bad
       // runnable and/or executor and swallow it.
-      log.log(
-          Level.SEVERE,
-          "RuntimeException while executing runnable " + listener + " with executor " + executor,
-          e);
+      log.get()
+          .log(
+              Level.SEVERE,
+              "RuntimeException while executing runnable "
+                  + listener
+                  + " with executor "
+                  + executor,
+              e);
     }
   }
 
@@ -99,8 +101,7 @@ class ImmediateFuture<V extends @Nullable Object> implements ListenableFuture<V>
   }
 
   static final class ImmediateCancelledFuture<V extends @Nullable Object> extends TrustedFuture<V> {
-    @CheckForNull
-    static final ImmediateCancelledFuture<Object> INSTANCE =
+    static final @Nullable ImmediateCancelledFuture<Object> INSTANCE =
         AbstractFuture.GENERATE_CANCELLATION_CAUSES ? null : new ImmediateCancelledFuture<>();
 
     ImmediateCancelledFuture() {

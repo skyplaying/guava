@@ -21,13 +21,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Queue;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tests for {@link Synchronized#queue} and {@link Queues#synchronizedQueue}.
  *
  * @author Kurt Alfred Kluever
  */
+@NullUnmarked
 public class SynchronizedQueueTest extends TestCase {
 
   protected Queue<String> create() {
@@ -39,7 +41,7 @@ public class SynchronizedQueueTest extends TestCase {
 
   private static final class TestQueue<E> implements Queue<E> {
     private final Queue<E> delegate = Lists.newLinkedList();
-    public final Object mutex = new Integer(1); // something Serializable
+    public final Object mutex = new Object[0]; // something Serializable
 
     @Override
     public boolean offer(E o) {

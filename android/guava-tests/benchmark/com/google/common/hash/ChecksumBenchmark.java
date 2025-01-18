@@ -23,6 +23,7 @@ import java.util.Random;
 import java.util.zip.Adler32;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Benchmarks for comparing {@link Checksum}s and {@link HashFunction}s that wrap {@link Checksum}s.
@@ -35,6 +36,7 @@ import java.util.zip.Checksum;
  *
  * @author Colin Decker
  */
+@NullUnmarked
 public class ChecksumBenchmark {
 
   // Use a constant seed for all of the benchmarks to ensure apples to apples comparisons.
@@ -94,6 +96,23 @@ public class ChecksumBenchmark {
     return result;
   }
 
+  // Fingerprint2011
+
+  @Benchmark
+  byte fingerprintHashFunction(int reps) {
+    return runHashFunction(reps, Hashing.fingerprint2011());
+  }
+
+  @Benchmark
+  byte fingerprintChecksum(int reps) throws Exception {
+    byte result = 0x01;
+    for (int i = 0; i < reps; i++) {
+      HashCode checksum = new Fingerprint2011().hashBytes(testBytes, 0, testBytes.length);
+      result = (byte) (result ^ checksum.asLong());
+    }
+    return result;
+  }
+
   // Helpers + main
 
   private byte runHashFunction(int reps, HashFunction hashFunction) {
@@ -101,6 +120,7 @@ public class ChecksumBenchmark {
     // Trick the JVM to prevent it from using the hash function non-polymorphically
     result ^= Hashing.crc32().hashInt(reps).asBytes()[0];
     result ^= Hashing.adler32().hashInt(reps).asBytes()[0];
+    result ^= Hashing.fingerprint2011().hashInt(reps).asBytes()[0];
     for (int i = 0; i < reps; i++) {
       result ^= hashFunction.hashBytes(testBytes).asBytes()[0];
     }

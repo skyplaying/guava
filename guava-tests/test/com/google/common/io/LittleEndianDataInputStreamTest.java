@@ -17,6 +17,7 @@
 package com.google.common.io;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.primitives.Bytes;
 import java.io.ByteArrayInputStream;
@@ -26,12 +27,14 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Test class for {@link LittleEndianDataInputStream}.
  *
  * @author Chris Nokleberg
  */
+@NullUnmarked
 public class LittleEndianDataInputStreamTest extends TestCase {
 
   private byte[] data;
@@ -75,32 +78,21 @@ public class LittleEndianDataInputStreamTest extends TestCase {
 
   public void testReadUnsignedByte_eof() throws IOException {
     DataInput in = new LittleEndianDataInputStream(new ByteArrayInputStream(new byte[0]));
-    try {
-      in.readUnsignedByte();
-      fail();
-    } catch (EOFException expected) {
-    }
+    assertThrows(EOFException.class, () -> in.readUnsignedByte());
   }
 
   public void testReadUnsignedShort_eof() throws IOException {
     byte[] buf = {23};
     DataInput in = new LittleEndianDataInputStream(new ByteArrayInputStream(buf));
-    try {
-      in.readUnsignedShort();
-      fail();
-    } catch (EOFException expected) {
-    }
+    assertThrows(EOFException.class, () -> in.readUnsignedShort());
   }
 
   @SuppressWarnings("DoNotCall")
   public void testReadLine() throws IOException {
     DataInput in = new LittleEndianDataInputStream(new ByteArrayInputStream(data));
-    try {
-      in.readLine();
-      fail();
-    } catch (UnsupportedOperationException expected) {
-      assertThat(expected).hasMessageThat().isEqualTo("readLine is not supported");
-    }
+    UnsupportedOperationException expected =
+        assertThrows(UnsupportedOperationException.class, () -> in.readLine());
+    assertThat(expected).hasMessageThat().isEqualTo("readLine is not supported");
   }
 
   public void testReadLittleEndian() throws IOException {

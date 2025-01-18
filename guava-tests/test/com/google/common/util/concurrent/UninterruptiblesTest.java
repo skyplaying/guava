@@ -49,12 +49,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link Uninterruptibles}.
  *
  * @author Anthony Zana
  */
+@NullUnmarked
 public class UninterruptiblesTest extends TestCase {
   private static final String EXPECTED_TAKE = "expectedTake";
 
@@ -484,7 +486,7 @@ public class UninterruptiblesTest extends TestCase {
     requestInterruptIn(500);
     executor.execute(new SleepTask(10000));
     executor.shutdown();
-    assertFalse(awaitTerminationUninterruptibly(executor, Duration.ofMillis(1000)));
+    assertFalse(awaitTerminationUninterruptibly(executor, Duration.ofSeconds(1)));
     assertFalse(executor.isTerminated());
     assertInterrupted();
   }

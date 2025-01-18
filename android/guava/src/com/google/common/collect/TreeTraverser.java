@@ -17,6 +17,7 @@
 package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Iterators.singletonIterator;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
@@ -25,7 +26,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Queue;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Views elements of a type {@code T} as nodes in a tree, and provides methods to traverse the trees
@@ -48,8 +49,8 @@ import javax.annotation.CheckForNull;
  *
  * <p>Null nodes are strictly forbidden.
  *
- * <p><b>For Java 8 users:</b> Because this is an abstract class, not an interface, you can't use a
- * lambda expression to extend it:
+ * <p>Because this is an abstract class, not an interface, you can't use a lambda expression to
+ * implement it:
  *
  * <pre>{@code
  * // won't work
@@ -74,8 +75,9 @@ import javax.annotation.CheckForNull;
 @Deprecated
 @Beta
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public abstract class TreeTraverser<T> {
+  /** Constructor for use by subclasses. */
+  public TreeTraverser() {}
 
   /**
    * Returns a tree traverser that uses the given function to navigate from a node to its children.
@@ -132,7 +134,7 @@ public abstract class TreeTraverser<T> {
 
     PreOrderIterator(T root) {
       this.stack = new ArrayDeque<>();
-      stack.addLast(Iterators.singletonIterator(checkNotNull(root)));
+      stack.addLast(singletonIterator(checkNotNull(root)));
     }
 
     @Override
@@ -199,8 +201,7 @@ public abstract class TreeTraverser<T> {
     }
 
     @Override
-    @CheckForNull
-    protected T computeNext() {
+    protected @Nullable T computeNext() {
       while (!stack.isEmpty()) {
         PostOrderNode<T> top = stack.getLast();
         if (top.childIterator.hasNext()) {
@@ -215,7 +216,7 @@ public abstract class TreeTraverser<T> {
     }
 
     private PostOrderNode<T> expand(T t) {
-      return new PostOrderNode<T>(t, children(t).iterator());
+      return new PostOrderNode<>(t, children(t).iterator());
     }
   }
 
@@ -245,7 +246,7 @@ public abstract class TreeTraverser<T> {
     private final Queue<T> queue;
 
     BreadthFirstIterator(T root) {
-      this.queue = new ArrayDeque<T>();
+      this.queue = new ArrayDeque<>();
       queue.add(root);
     }
 

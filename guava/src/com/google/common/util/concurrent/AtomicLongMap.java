@@ -17,10 +17,12 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
@@ -29,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A map containing {@code long} values that can be atomically updated. While writes to a
@@ -58,7 +60,6 @@ import javax.annotation.CheckForNull;
  */
 @GwtCompatible
 @J2ktIncompatible
-@ElementTypesAreNonnullByDefault
 public final class AtomicLongMap<K> implements Serializable {
   private final ConcurrentHashMap<K, Long> map;
 
@@ -68,7 +69,7 @@ public final class AtomicLongMap<K> implements Serializable {
 
   /** Creates an {@code AtomicLongMap}. */
   public static <K> AtomicLongMap<K> create() {
-    return new AtomicLongMap<K>(new ConcurrentHashMap<>());
+    return new AtomicLongMap<>(new ConcurrentHashMap<>());
   }
 
   /** Creates an {@code AtomicLongMap} with the same mappings as the specified {@code Map}. */
@@ -146,8 +147,11 @@ public final class AtomicLongMap<K> implements Serializable {
   @CanIgnoreReturnValue
   public long updateAndGet(K key, LongUnaryOperator updaterFunction) {
     checkNotNull(updaterFunction);
-    return map.compute(
-        key, (k, value) -> updaterFunction.applyAsLong((value == null) ? 0L : value.longValue()));
+    Long result =
+        map.compute(
+            key,
+            (k, value) -> updaterFunction.applyAsLong((value == null) ? 0L : value.longValue()));
+    return requireNonNull(result);
   }
 
   /**
@@ -265,7 +269,7 @@ public final class AtomicLongMap<K> implements Serializable {
     return map.values().stream().mapToLong(Long::longValue).sum();
   }
 
-  @CheckForNull private transient Map<K, Long> asMap;
+  @LazyInit private transient @Nullable Map<K, Long> asMap;
 
   /** Returns a live, read-only view of the map backing this {@code AtomicLongMap}. */
   public Map<K, Long> asMap() {
@@ -328,7 +332,7 @@ public final class AtomicLongMap<K> implements Serializable {
                 return oldValue;
               }
             });
-    return noValue.get() ? 0L : result.longValue();
+    return noValue.get() ? 0L : requireNonNull(result).longValue();
   }
 
   /**

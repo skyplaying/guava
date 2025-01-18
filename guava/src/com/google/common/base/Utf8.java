@@ -36,7 +36,6 @@ import com.google.common.annotations.GwtCompatible;
  * @since 16.0
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 public final class Utf8 {
   /**
    * Returns the number of bytes in the UTF-8-encoded form of {@code sequence}. For a string, this
@@ -85,7 +84,7 @@ public final class Utf8 {
         utf8Length += (0x7f - c) >>> 31; // branch free!
       } else {
         utf8Length += 2;
-        // jdk7+: if (Character.isSurrogate(c)) {
+        // We can't use Character.isSurrogate(c) here and below because of GWT.
         if (MIN_SURROGATE <= c && c <= MAX_SURROGATE) {
           // Check that we have a well-formed surrogate pair.
           if (Character.codePointAt(sequence, i) == c) {

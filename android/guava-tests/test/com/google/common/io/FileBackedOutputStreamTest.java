@@ -19,6 +19,7 @@ package com.google.common.io;
 import static com.google.common.base.StandardSystemProperty.JAVA_IO_TMPDIR;
 import static com.google.common.base.StandardSystemProperty.OS_NAME;
 import static com.google.common.truth.Truth.assertThat;
+import static java.lang.Math.min;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static org.junit.Assert.assertThrows;
@@ -29,6 +30,7 @@ import java.io.OutputStream;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.Arrays;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit tests for {@link FileBackedOutputStream}.
@@ -37,6 +39,7 @@ import java.util.Arrays;
  *
  * @author Chris Nokleberg
  */
+@NullUnmarked
 public class FileBackedOutputStreamTest extends IoTestCase {
 
 
@@ -57,7 +60,7 @@ public class FileBackedOutputStreamTest extends IoTestCase {
     byte[] data = newPreFilledByteArray(dataSize);
     FileBackedOutputStream out = new FileBackedOutputStream(fileThreshold, resetOnFinalize);
     ByteSource source = out.asByteSource();
-    int chunk1 = Math.min(dataSize, fileThreshold);
+    int chunk1 = min(dataSize, fileThreshold);
     int chunk2 = dataSize - chunk1;
 
     // Write just enough to not trip the threshold
@@ -137,11 +140,7 @@ public class FileBackedOutputStreamTest extends IoTestCase {
     assertTrue(Arrays.equals(data, source.read()));
 
     out.close();
-    try {
-      out.write(42);
-      fail("expected exception");
-    } catch (IOException expected) {
-    }
+    assertThrows(IOException.class, () -> out.write(42));
 
     // Verify that write had no effect
     assertTrue(Arrays.equals(data, source.read()));

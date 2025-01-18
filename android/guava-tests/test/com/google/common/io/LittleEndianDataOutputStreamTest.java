@@ -16,7 +16,8 @@
 
 package com.google.common.io;
 
-import com.google.common.base.Charsets;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 import com.google.common.primitives.Bytes;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,12 +25,14 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Test class for {@link LittleEndianDataOutputStream}.
  *
  * @author Keith Bottner
  */
+@NullUnmarked
 public class LittleEndianDataOutputStreamTest extends TestCase {
 
   private ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -92,7 +95,7 @@ public class LittleEndianDataOutputStreamTest extends TestCase {
     /* Read in various values NORMALLY */
     byte[] b = new byte[6];
     in.readFully(b);
-    assertEquals("r\u00C9sum\u00C9".getBytes(Charsets.ISO_8859_1), b);
+    assertEquals("r\u00C9sum\u00C9".getBytes(ISO_8859_1), b);
   }
 
   @SuppressWarnings("deprecation") // testing a deprecated method

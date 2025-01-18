@@ -16,12 +16,15 @@
 
 package com.google.common.collect;
 
+import static java.util.Arrays.asList;
+
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.TableCollectionTest.ColumnMapTests;
-import java.util.Arrays;
 import java.util.Map;
+import org.jspecify.annotations.NullUnmarked;
 
 @GwtIncompatible // TODO(hhchan): ArrayTable
+@NullUnmarked
 public class ArrayTableColumnMapTest extends ColumnMapTests {
   public ArrayTableColumnMapTest() {
     super(true, false, false, false);
@@ -29,7 +32,7 @@ public class ArrayTableColumnMapTest extends ColumnMapTests {
 
   @Override
   Table<Integer, String, Character> makeTable() {
-    return ArrayTable.create(Arrays.asList(1, 2, 3), Arrays.asList("foo", "bar", "dog"));
+    return ArrayTable.create(asList(1, 2, 3), asList("foo", "bar", "dog"));
   }
 
   @Override

@@ -15,9 +15,12 @@
  */
 
 /**
- * This package contains testing utilities. It is a part of the open-source <a
+ * Testing utilities. This package is a part of the open-source <a
  * href="https://github.com/google/guava">Guava</a> library.
  */
-@com.google.errorprone.annotations.CheckReturnValue
-@javax.annotation.ParametersAreNonnullByDefault
+@CheckReturnValue
+@NullMarked
 package com.google.common.testing;
+
+import com.google.errorprone.annotations.CheckReturnValue;
+import org.jspecify.annotations.NullMarked;

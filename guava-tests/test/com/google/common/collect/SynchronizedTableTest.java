@@ -20,12 +20,14 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-public class SynchronizedTableTest extends AbstractTableTest {
+@NullUnmarked
+public class SynchronizedTableTest extends AbstractTableTest<Character> {
   private static final class TestTable<R, C, V> implements Table<R, C, V>, Serializable {
     final Table<R, C, V> delegate = HashBasedTable.create();
-    public final Object mutex = new Integer(1); // something Serializable
+    public final Object mutex = new Object[0]; // something Serializable
 
     @Override
     public String toString() {
@@ -164,7 +166,7 @@ public class SynchronizedTableTest extends AbstractTableTest {
   }
 
   @Override
-  protected Table<String, Integer, Character> create(Object... data) {
+  protected Table<String, Integer, Character> create(@Nullable Object... data) {
     TestTable<String, Integer, Character> table = new TestTable<>();
     Table<String, Integer, Character> synced = Synchronized.table(table, table.mutex);
     populate(synced, data);

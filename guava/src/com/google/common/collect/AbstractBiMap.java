@@ -19,12 +19,14 @@ package com.google.common.collect;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.NullnessCasts.uncheckedCastNullableTToT;
+import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.base.Objects;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.concurrent.LazyInit;
 import com.google.j2objc.annotations.RetainedWith;
 import com.google.j2objc.annotations.WeakOuter;
 import java.io.IOException;
@@ -36,8 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A general-purpose bimap implementation using any two backing {@code Map} instances.
@@ -49,7 +50,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Mike Bostock
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Object>
     extends ForwardingMap<K, V> implements BiMap<K, V>, Serializable {
 
@@ -115,7 +115,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
   // Query Operations (optimizations)
 
   @Override
-  public boolean containsValue(@CheckForNull Object value) {
+  public boolean containsValue(@Nullable Object value) {
     return inverse.containsKey(value);
   }
 
@@ -123,20 +123,18 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
 
   @CanIgnoreReturnValue
   @Override
-  @CheckForNull
-  public V put(@ParametricNullness K key, @ParametricNullness V value) {
+  public @Nullable V put(@ParametricNullness K key, @ParametricNullness V value) {
     return putInBothMaps(key, value, false);
   }
 
   @CanIgnoreReturnValue
   @Override
-  @CheckForNull
-  public V forcePut(@ParametricNullness K key, @ParametricNullness V value) {
+  public @Nullable V forcePut(@ParametricNullness K key, @ParametricNullness V value) {
     return putInBothMaps(key, value, true);
   }
 
-  @CheckForNull
-  private V putInBothMaps(@ParametricNullness K key, @ParametricNullness V value, boolean force) {
+  private @Nullable V putInBothMaps(
+      @ParametricNullness K key, @ParametricNullness V value, boolean force) {
     checkKey(key);
     checkValue(value);
     boolean containedKey = containsKey(key);
@@ -156,7 +154,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
   private void updateInverseMap(
       @ParametricNullness K key,
       boolean containedKey,
-      @CheckForNull V oldValue,
+      @Nullable V oldValue,
       @ParametricNullness V newValue) {
     if (containedKey) {
       // The cast is safe because of the containedKey check.
@@ -167,14 +165,13 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
 
   @CanIgnoreReturnValue
   @Override
-  @CheckForNull
-  public V remove(@CheckForNull Object key) {
+  public @Nullable V remove(@Nullable Object key) {
     return containsKey(key) ? removeFromBothMaps(key) : null;
   }
 
   @CanIgnoreReturnValue
   @ParametricNullness
-  private V removeFromBothMaps(@CheckForNull Object key) {
+  private V removeFromBothMaps(@Nullable Object key) {
     // The cast is safe because the callers of this method first check that the key is present.
     V oldValue = uncheckedCastNullableTToT(delegate.remove(key));
     removeFromInverseMap(oldValue);
@@ -230,7 +227,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     return inverse;
   }
 
-  @CheckForNull private transient Set<K> keySet;
+  @LazyInit private transient @Nullable Set<K> keySet;
 
   @Override
   public Set<K> keySet() {
@@ -251,7 +248,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     }
 
     @Override
-    public boolean remove(@CheckForNull Object key) {
+    public boolean remove(@Nullable Object key) {
       if (!contains(key)) {
         return false;
       }
@@ -275,7 +272,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     }
   }
 
-  @CheckForNull private transient Set<V> valueSet;
+  @LazyInit private transient @Nullable Set<V> valueSet;
 
   @Override
   public Set<V> values() {
@@ -318,7 +315,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     }
   }
 
-  @CheckForNull private transient Set<Entry<K, V>> entrySet;
+  @LazyInit private transient @Nullable Set<Entry<K, V>> entrySet;
 
   @Override
   public Set<Entry<K, V>> entrySet() {
@@ -358,7 +355,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
   Iterator<Entry<K, V>> entrySetIterator() {
     final Iterator<Entry<K, V>> iterator = delegate.entrySet().iterator();
     return new Iterator<Entry<K, V>>() {
-      @CheckForNull Entry<K, V> entry;
+      @Nullable Entry<K, V> entry;
 
       @Override
       public boolean hasNext() {
@@ -399,7 +396,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     }
 
     @Override
-    public boolean remove(@CheckForNull Object object) {
+    public boolean remove(@Nullable Object object) {
       /*
        * `o instanceof Entry` is guaranteed by `contains`, but we check it here to satisfy our
        * nullness checker.
@@ -438,7 +435,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     }
 
     @Override
-    public boolean contains(@CheckForNull Object o) {
+    public boolean contains(@Nullable Object o) {
       return Maps.containsEntryImpl(delegate(), o);
     }
 
@@ -501,7 +498,7 @@ abstract class AbstractBiMap<K extends @Nullable Object, V extends @Nullable Obj
     @SuppressWarnings("unchecked") // reading data stored by writeObject
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
       stream.defaultReadObject();
-      setInverse((AbstractBiMap<V, K>) stream.readObject());
+      setInverse((AbstractBiMap<V, K>) requireNonNull(stream.readObject()));
     }
 
     @GwtIncompatible // Not needed in the emulated source.

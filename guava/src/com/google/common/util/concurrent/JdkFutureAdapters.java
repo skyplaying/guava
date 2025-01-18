@@ -19,13 +19,12 @@ import static com.google.common.util.concurrent.Uninterruptibles.getUninterrupti
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities necessary for working with libraries that supply plain {@link Future} instances. Note
@@ -40,7 +39,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class JdkFutureAdapters {
   /**
    * Assigns a thread to the given {@link Future} to provide {@link ListenableFuture} functionality.
@@ -162,10 +160,11 @@ public final class JdkFutureAdapters {
                  * to return a proper ListenableFuture instead of using listenInPoolThread.
                  */
                 getUninterruptibly(delegate);
-              } catch (ExecutionException | RuntimeException | Error e) {
-                // (including CancellationException)
+              } catch (Throwable t) {
+                // (including CancellationException and sneaky checked exception)
                 // The task is presumably done, run the listeners.
-                // TODO(cpovirk): Do *something* in case of Error (and maybe RuntimeException)?
+                // TODO(cpovirk): Do *something* in case of Error (and maybe
+                // non-CancellationException, non-ExecutionException exceptions)?
               }
               executionList.execute();
             });

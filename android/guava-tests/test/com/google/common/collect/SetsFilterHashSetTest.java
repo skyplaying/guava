@@ -16,14 +16,18 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Sets.newHashSet;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.FilteredCollectionsTestUtil.AbstractFilteredSetTest;
 import java.util.Set;
+import org.jspecify.annotations.NullUnmarked;
 
+@NullUnmarked
 public final class SetsFilterHashSetTest extends AbstractFilteredSetTest<Set<Integer>> {
   @Override
   Set<Integer> createUnfiltered(Iterable<Integer> contents) {
-    return Sets.newHashSet(contents);
+    return newHashSet(contents);
   }
 
   @Override

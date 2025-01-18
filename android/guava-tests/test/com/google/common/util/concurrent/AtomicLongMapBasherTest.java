@@ -19,6 +19,7 @@ package com.google.common.util.concurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -26,13 +27,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Basher test for {@link AtomicLongMap}.
  *
  * @author mike nonemacher
  */
+@J2ktIncompatible // threads
 @GwtIncompatible // threads
+@NullUnmarked
 public class AtomicLongMapBasherTest extends TestCase {
   private final Random random = new Random(301);
 

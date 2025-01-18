@@ -16,6 +16,7 @@ package com.google.common.base;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.Math.min;
 import static java.util.logging.Level.WARNING;
 
 import com.google.common.annotations.GwtCompatible;
@@ -23,8 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.InlineMe;
 import com.google.errorprone.annotations.InlineMeValidationDisabled;
 import java.util.logging.Logger;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static utility methods pertaining to {@code String} or {@code CharSequence} instances.
@@ -33,7 +33,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 3.0
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public final class Strings {
   private Strings() {}
 
@@ -43,7 +42,7 @@ public final class Strings {
    * @param string the string to test and possibly return
    * @return {@code string} itself if it is non-null; {@code ""} if it is null
    */
-  public static String nullToEmpty(@CheckForNull String string) {
+  public static String nullToEmpty(@Nullable String string) {
     return Platform.nullToEmpty(string);
   }
 
@@ -53,8 +52,7 @@ public final class Strings {
    * @param string the string to test and possibly return
    * @return {@code string} itself if it is nonempty; {@code null} if it is empty or null
    */
-  @CheckForNull
-  public static String emptyToNull(@CheckForNull String string) {
+  public static @Nullable String emptyToNull(@Nullable String string) {
     return Platform.emptyToNull(string);
   }
 
@@ -69,7 +67,7 @@ public final class Strings {
    * @param string a string reference to check
    * @return {@code true} if the string is null or is the empty string
    */
-  public static boolean isNullOrEmpty(@CheckForNull String string) {
+  public static boolean isNullOrEmpty(@Nullable String string) {
     return Platform.stringIsNullOrEmpty(string);
   }
 
@@ -186,7 +184,7 @@ public final class Strings {
     checkNotNull(a);
     checkNotNull(b);
 
-    int maxPrefixLength = Math.min(a.length(), b.length());
+    int maxPrefixLength = min(a.length(), b.length());
     int p = 0;
     while (p < maxPrefixLength && a.charAt(p) == b.charAt(p)) {
       p++;
@@ -208,7 +206,7 @@ public final class Strings {
     checkNotNull(a);
     checkNotNull(b);
 
-    int maxSuffixLength = Math.min(a.length(), b.length());
+    int maxSuffixLength = min(a.length(), b.length());
     int s = 0;
     while (s < maxSuffixLength && a.charAt(a.length() - s - 1) == b.charAt(b.length() - s - 1)) {
       s++;
@@ -266,7 +264,7 @@ public final class Strings {
    */
   // TODO(diamondm) consider using Arrays.toString() for array parameters
   public static String lenientFormat(
-      @CheckForNull String template, @CheckForNull @Nullable Object... args) {
+      @Nullable String template, @Nullable Object @Nullable ... args) {
     template = String.valueOf(template); // null -> "null"
 
     if (args == null) {
@@ -306,7 +304,7 @@ public final class Strings {
     return builder.toString();
   }
 
-  private static String lenientToString(@CheckForNull Object o) {
+  private static String lenientToString(@Nullable Object o) {
     if (o == null) {
       return "null";
     }

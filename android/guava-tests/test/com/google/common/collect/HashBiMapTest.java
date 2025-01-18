@@ -16,10 +16,12 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Maps.immutableEntry;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
@@ -32,6 +34,7 @@ import java.util.Set;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Tests for {@link HashBiMap}.
@@ -39,8 +42,10 @@ import junit.framework.TestSuite;
  * @author Mike Bostock
  */
 @GwtCompatible(emulated = true)
+@NullMarked
 public class HashBiMapTest extends TestCase {
 
+  @J2ktIncompatible
   public static final class HashBiMapGenerator extends TestStringBiMapGenerator {
     @Override
     protected BiMap<String, String> create(Entry<String, String>[] entries) {
@@ -52,6 +57,7 @@ public class HashBiMapTest extends TestCase {
     }
   }
 
+  @J2ktIncompatible
   @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite();
@@ -138,9 +144,7 @@ public class HashBiMapTest extends TestCase {
     map.put("quux", 3);
     assertThat(map.entrySet())
         .containsExactly(
-            Maps.immutableEntry("foo", 1),
-            Maps.immutableEntry("bar", 2),
-            Maps.immutableEntry("quux", 3))
+            immutableEntry("foo", 1), immutableEntry("bar", 2), immutableEntry("quux", 3))
         .inOrder();
   }
 
@@ -152,7 +156,7 @@ public class HashBiMapTest extends TestCase {
 
     map.remove("foo");
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry("bar", 2), Maps.immutableEntry("quux", 3))
+        .containsExactly(immutableEntry("bar", 2), immutableEntry("quux", 3))
         .inOrder();
   }
 
@@ -164,7 +168,7 @@ public class HashBiMapTest extends TestCase {
 
     map.remove("bar");
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry("foo", 1), Maps.immutableEntry("quux", 3))
+        .containsExactly(immutableEntry("foo", 1), immutableEntry("quux", 3))
         .inOrder();
   }
 
@@ -176,7 +180,7 @@ public class HashBiMapTest extends TestCase {
 
     map.remove("quux");
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry("foo", 1), Maps.immutableEntry("bar", 2))
+        .containsExactly(immutableEntry("foo", 1), immutableEntry("bar", 2))
         .inOrder();
   }
 
@@ -188,7 +192,7 @@ public class HashBiMapTest extends TestCase {
 
     map.forcePut("quux", 1);
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry("bar", 2), Maps.immutableEntry("quux", 1))
+        .containsExactly(immutableEntry("bar", 2), immutableEntry("quux", 1))
         .inOrder();
   }
 
@@ -200,7 +204,7 @@ public class HashBiMapTest extends TestCase {
 
     map.inverse().forcePut(1, "quux");
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry("bar", 2), Maps.immutableEntry("quux", 1))
+        .containsExactly(immutableEntry("bar", 2), immutableEntry("quux", 1))
         .inOrder();
   }
 
@@ -210,7 +214,7 @@ public class HashBiMapTest extends TestCase {
     map.put("quux", 1);
 
     assertThat(map.inverse().entrySet())
-        .containsExactly(Maps.immutableEntry(2, "bar"), Maps.immutableEntry(1, "quux"))
+        .containsExactly(immutableEntry(2, "bar"), immutableEntry(1, "quux"))
         .inOrder();
   }
 
@@ -222,7 +226,7 @@ public class HashBiMapTest extends TestCase {
 
     map.inverse().forcePut(1, "quux");
     assertThat(map.inverse().entrySet())
-        .containsExactly(Maps.immutableEntry(2, "bar"), Maps.immutableEntry(1, "quux"))
+        .containsExactly(immutableEntry(2, "bar"), immutableEntry(1, "quux"))
         .inOrder();
   }
 
@@ -236,9 +240,7 @@ public class HashBiMapTest extends TestCase {
     map.inverse().forcePut(4, "bar");
     assertThat(map.entrySet())
         .containsExactly(
-            Maps.immutableEntry("foo", 1),
-            Maps.immutableEntry("bar", 4),
-            Maps.immutableEntry("quux", 3))
+            immutableEntry("foo", 1), immutableEntry("bar", 4), immutableEntry("quux", 3))
         .inOrder();
   }
 
@@ -249,10 +251,10 @@ public class HashBiMapTest extends TestCase {
     Iterator<Entry<String, Integer>> inverseEntryItr = map.inverse().entrySet().iterator();
     Entry<String, Integer> entry = inverseEntryItr.next();
     entry.setValue(3);
-    assertEquals(Maps.immutableEntry("b", 2), inverseEntryItr.next());
+    assertEquals(immutableEntry("b", 2), inverseEntryItr.next());
     assertFalse(inverseEntryItr.hasNext());
     assertThat(map.entrySet())
-        .containsExactly(Maps.immutableEntry(2, "b"), Maps.immutableEntry(3, "a"))
+        .containsExactly(immutableEntry(2, "b"), immutableEntry(3, "a"))
         .inOrder();
   }
 }

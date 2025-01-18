@@ -17,7 +17,6 @@ package com.google.common.io;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.Longs;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.FilterOutputStream;
@@ -37,7 +36,6 @@ import java.io.OutputStream;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class LittleEndianDataOutputStream extends FilterOutputStream implements DataOutput {
 
   /**
@@ -143,8 +141,7 @@ public final class LittleEndianDataOutputStream extends FilterOutputStream imple
    */
   @Override
   public void writeLong(long v) throws IOException {
-    byte[] bytes = Longs.toByteArray(Long.reverseBytes(v));
-    write(bytes, 0, bytes.length);
+    ((DataOutputStream) out).writeLong(Long.reverseBytes(v));
   }
 
   /**

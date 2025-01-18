@@ -16,10 +16,12 @@
 
 package com.google.common.base;
 
+import static com.google.common.base.ReflectionFreeAssertThrows.assertThrows;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.annotations.J2ktIncompatible;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link Ascii}.
@@ -27,6 +29,7 @@ import junit.framework.TestCase;
  * @author Craig Berry
  */
 @GwtCompatible
+@NullUnmarked
 public class AsciiTest extends TestCase {
 
   /**
@@ -99,29 +102,13 @@ public class AsciiTest extends TestCase {
   }
 
   public void testTruncateIllegalArguments() {
-    try {
-      Ascii.truncate("foobar", 2, "...");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Ascii.truncate("foobar", 2, "..."));
 
-    try {
-      Ascii.truncate("foobar", 8, "1234567890");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Ascii.truncate("foobar", 8, "1234567890"));
 
-    try {
-      Ascii.truncate("foobar", -1, "...");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Ascii.truncate("foobar", -1, "..."));
 
-    try {
-      Ascii.truncate("foobar", -1, "");
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Ascii.truncate("foobar", -1, ""));
   }
 
   public void testEqualsIgnoreCase() {
@@ -139,7 +126,6 @@ public class AsciiTest extends TestCase {
     assertFalse(Ascii.equalsIgnoreCase("[", "{"));
   }
 
-  @J2ktIncompatible
   @GwtIncompatible // String.toUpperCase() has browser semantics
   public void testEqualsIgnoreCaseUnicodeEquivalence() {
     // Note that it's possible in future that the JDK's idea to toUpperCase() or equalsIgnoreCase()

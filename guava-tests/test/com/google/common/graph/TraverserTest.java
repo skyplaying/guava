@@ -21,7 +21,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Lists.charactersOf;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
@@ -30,11 +30,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Chars;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
+@NullUnmarked
 public class TraverserTest {
 
   /**
@@ -311,11 +313,9 @@ public class TraverserTest {
 
   @Test
   public void forGraph_breadthFirst_emptyGraph() {
-    try {
-      Traverser.forGraph(createDirectedGraph()).breadthFirst('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).breadthFirst('a'));
   }
 
   /**
@@ -326,11 +326,9 @@ public class TraverserTest {
   public void forGraph_breadthFirstIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forGraph(createDirectedGraph()).breadthFirst(charactersOf("")), "");
-    try {
-      Traverser.forGraph(createDirectedGraph()).breadthFirst(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).breadthFirst(charactersOf("a")));
   }
 
   /**
@@ -509,22 +507,18 @@ public class TraverserTest {
 
   @Test
   public void forGraph_depthFirstPreOrder_emptyGraph() {
-    try {
-      Traverser.forGraph(createDirectedGraph()).depthFirstPreOrder('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).depthFirstPreOrder('a'));
   }
 
   @Test
   public void forGraph_depthFirstPreOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forGraph(createDirectedGraph()).depthFirstPreOrder(charactersOf("")), "");
-    try {
-      Traverser.forGraph(createDirectedGraph()).depthFirstPreOrder(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).depthFirstPreOrder(charactersOf("a")));
   }
 
   @Test
@@ -691,22 +685,18 @@ public class TraverserTest {
 
   @Test
   public void forGraph_depthFirstPostOrder_emptyGraph() {
-    try {
-      Traverser.forGraph(createDirectedGraph()).depthFirstPostOrder('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).depthFirstPostOrder('a'));
   }
 
   @Test
   public void forGraph_depthFirstPostOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forGraph(createDirectedGraph()).depthFirstPostOrder(charactersOf("")), "");
-    try {
-      Traverser.forGraph(createDirectedGraph()).depthFirstPostOrder(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forGraph(createDirectedGraph()).depthFirstPostOrder(charactersOf("a")));
   }
 
   @Test
@@ -749,11 +739,7 @@ public class TraverserTest {
     MutableGraph<String> graph = GraphBuilder.undirected().build();
     graph.putEdge("a", "b");
 
-    try {
-      Traverser.forTree(graph);
-      fail("Expected exception");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Traverser.forTree(graph));
   }
 
   @Test
@@ -770,11 +756,7 @@ public class TraverserTest {
     MutableValueGraph<String, Integer> valueGraph = ValueGraphBuilder.undirected().build();
     valueGraph.putEdgeValue("a", "b", 11);
 
-    try {
-      Traverser.forTree(valueGraph);
-      fail("Expected exception");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Traverser.forTree(valueGraph));
   }
 
   @Test
@@ -791,11 +773,7 @@ public class TraverserTest {
     MutableNetwork<String, Integer> network = NetworkBuilder.undirected().build();
     network.addEdge("a", "b", 11);
 
-    try {
-      Traverser.forTree(network);
-      fail("Expected exception");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Traverser.forTree(network));
   }
 
   @Test
@@ -889,22 +867,18 @@ public class TraverserTest {
 
   @Test
   public void forTree_breadthFirst_emptyGraph() {
-    try {
-      Traverser.forTree(createDirectedGraph()).breadthFirst('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).breadthFirst('a'));
   }
 
   @Test
   public void forTree_breadthFirstIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forTree(createDirectedGraph()).breadthFirst(charactersOf("")), "");
-    try {
-      Traverser.forTree(createDirectedGraph()).breadthFirst(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).breadthFirst(charactersOf("a")));
   }
 
   @Test
@@ -1026,22 +1000,18 @@ public class TraverserTest {
 
   @Test
   public void forTree_depthFirstPreOrder_emptyGraph() {
-    try {
-      Traverser.forTree(createDirectedGraph()).depthFirstPreOrder('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).depthFirstPreOrder('a'));
   }
 
   @Test
   public void forTree_depthFirstPreOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forTree(createDirectedGraph()).depthFirstPreOrder(charactersOf("")), "");
-    try {
-      Traverser.forTree(createDirectedGraph()).depthFirstPreOrder(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).depthFirstPreOrder(charactersOf("a")));
   }
 
   @Test
@@ -1156,22 +1126,18 @@ public class TraverserTest {
 
   @Test
   public void forTree_depthFirstPostOrder_emptyGraph() {
-    try {
-      Traverser.forTree(createDirectedGraph()).depthFirstPostOrder('a');
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).depthFirstPostOrder('a'));
   }
 
   @Test
   public void forTree_depthFirstPostOrderIterable_emptyGraph() {
     assertEqualCharNodes(
         Traverser.forTree(createDirectedGraph()).depthFirstPostOrder(charactersOf("")), "");
-    try {
-      Traverser.forTree(createDirectedGraph()).depthFirstPostOrder(charactersOf("a"));
-      fail("Expected IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Traverser.forTree(createDirectedGraph()).depthFirstPostOrder(charactersOf("a")));
   }
 
   @Test
@@ -1201,11 +1167,11 @@ public class TraverserTest {
   }
 
   private static SuccessorsFunction<Character> createDirectedGraph(String... edges) {
-    return createGraph(/* directed = */ true, edges);
+    return createGraph(/* directed= */ true, edges);
   }
 
   private static SuccessorsFunction<Character> createUndirectedGraph(String... edges) {
-    return createGraph(/* directed = */ false, edges);
+    return createGraph(/* directed= */ false, edges);
   }
 
   /**

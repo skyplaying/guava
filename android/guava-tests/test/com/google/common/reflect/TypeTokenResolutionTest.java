@@ -17,6 +17,7 @@
 package com.google.common.reflect;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Unit test for {@link TypeToken} and {@link TypeResolver}.
@@ -36,6 +38,7 @@ import junit.framework.TestCase;
  * @author Ben Yu
  */
 @AndroidIncompatible // lots of failures, possibly some related to bad equals() implementations?
+@NullUnmarked
 public class TypeTokenResolutionTest extends TestCase {
 
   private static class Foo<A, B> {
@@ -248,11 +251,7 @@ public class TypeTokenResolutionTest extends TestCase {
         TypeToken.of(StringIterable.class)
             .resolveType(Iterable.class.getTypeParameters()[0])
             .getType());
-    try {
-      TypeToken.of(this.getClass()).resolveType(null);
-      fail();
-    } catch (NullPointerException expected) {
-    }
+    assertThrows(NullPointerException.class, () -> TypeToken.of(this.getClass()).resolveType(null));
   }
 
   public void testContextIsParameterizedType() throws Exception {

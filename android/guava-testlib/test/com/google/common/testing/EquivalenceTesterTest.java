@@ -17,6 +17,7 @@
 package com.google.common.testing;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.testing.ReflectionFreeAssertThrows.assertThrows;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
@@ -26,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link EquivalenceTester}.
@@ -33,6 +35,7 @@ import junit.framework.TestCase;
  * @author Gregory Kick
  */
 @GwtCompatible
+@NullUnmarked
 public class EquivalenceTesterTest extends TestCase {
   private EquivalenceTester<Object> tester;
   private MockEquivalence equivalenceMock;
@@ -45,15 +48,11 @@ public class EquivalenceTesterTest extends TestCase {
   }
 
   /** Test null reference yields error */
-  public void testOf_NullPointerException() {
-    try {
-      EquivalenceTester.of(null);
-      fail("Should fail on null reference");
-    } catch (NullPointerException expected) {
-    }
+  public void testOf_nullPointerException() {
+    assertThrows(NullPointerException.class, () -> EquivalenceTester.of(null));
   }
 
-  public void testTest_NoData() {
+  public void testTest_noData() {
     tester.test();
   }
 
@@ -104,7 +103,8 @@ public class EquivalenceTesterTest extends TestCase {
     try {
       tester.addEquivalenceGroup(group1Item1, group1Item2).test();
     } catch (AssertionFailedError expected) {
-      assertThat(expected.getMessage())
+      assertThat(expected)
+          .hasMessageThat()
           .contains(
               "TestObject{group=1, item=2} [group 1, item 2] must be equivalent to "
                   + "TestObject{group=1, item=1} [group 1, item 1]");
@@ -134,7 +134,8 @@ public class EquivalenceTesterTest extends TestCase {
     try {
       tester.addEquivalenceGroup(group1Item1, group1Item2, group1Item3).test();
     } catch (AssertionFailedError expected) {
-      assertThat(expected.getMessage())
+      assertThat(expected)
+          .hasMessageThat()
           .contains(
               "TestObject{group=1, item=2} [group 1, item 2] must be equivalent to "
                   + "TestObject{group=1, item=3} [group 1, item 3]");
@@ -158,7 +159,8 @@ public class EquivalenceTesterTest extends TestCase {
     try {
       tester.addEquivalenceGroup(group1Item1).addEquivalenceGroup(group2Item1).test();
     } catch (AssertionFailedError expected) {
-      assertThat(expected.getMessage())
+      assertThat(expected)
+          .hasMessageThat()
           .contains(
               "TestObject{group=1, item=1} [group 1, item 1] must not be equivalent to "
                   + "TestObject{group=2, item=1} [group 2, item 1]");
@@ -236,7 +238,7 @@ public class EquivalenceTesterTest extends TestCase {
 
     void replay() {
       checkRecording();
-      equivalentExpectations = equivalentExpectationsBuilder.build();
+      equivalentExpectations = equivalentExpectationsBuilder.buildOrThrow();
       hashExpectations = hashExpectationsBuilder.buildOrThrow();
     }
 

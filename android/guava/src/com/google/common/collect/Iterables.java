@@ -27,6 +27,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.errorprone.annotations.InlineMe;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -35,18 +36,17 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.RandomAccess;
 import java.util.Set;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An assortment of mainly legacy static utility methods that operate on or return objects of type
  * {@code Iterable}. Except as noted, each method has a corresponding {@link Iterator}-based method
  * in the {@link Iterators} class.
  *
- * <p><b>Java 8 users:</b> several common uses for this class are now more comprehensively addressed
- * by the new {@link java.util.stream.Stream} library. Read the method documentation below for
- * comparisons. This class is not being deprecated, but we gently encourage you to migrate to
+ * <p><b>Java 8+ users:</b> several common uses for this class are now more comprehensively
+ * addressed by the new {@link java.util.stream.Stream} library. Read the method documentation below
+ * for comparisons. This class is not being deprecated, but we gently encourage you to migrate to
  * streams.
  *
  * <p><i>Performance notes:</i> Unless otherwise noted, all of the iterables produced in this class
@@ -62,7 +62,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @since 2.0
  */
 @GwtCompatible(emulated = true)
-@ElementTypesAreNonnullByDefault
 public final class Iterables {
   private Iterables() {}
 
@@ -84,6 +83,9 @@ public final class Iterables {
    * @deprecated no need to use this
    * @since 10.0
    */
+  @InlineMe(
+      replacement = "checkNotNull(iterable)",
+      staticImports = "com.google.common.base.Preconditions.checkNotNull")
   @Deprecated
   public static <E> Iterable<E> unmodifiableIterable(ImmutableCollection<E> iterable) {
     return checkNotNull(iterable);
@@ -124,7 +126,7 @@ public final class Iterables {
    */
   // <? extends @Nullable Object> instead of <?> because of Kotlin b/189937072, discussed in Joiner.
   public static boolean contains(
-      Iterable<? extends @Nullable Object> iterable, @CheckForNull Object element) {
+      Iterable<? extends @Nullable Object> iterable, @Nullable Object element) {
     if (iterable instanceof Collection) {
       Collection<?> collection = (Collection<?>) iterable;
       return Collections2.safeContains(collection, element);
@@ -172,6 +174,9 @@ public final class Iterables {
    * <p>Removals may or may not happen immediately as each element is tested against the predicate.
    * The behavior of this method is not specified if {@code predicate} is dependent on {@code
    * removeFrom}.
+   *
+   * <p><b>Java 8+ users:</b> if {@code removeFrom} is a {@link Collection}, use {@code
+   * removeFrom.removeIf(predicate)} instead.
    *
    * @param removeFrom the iterable to (potentially) remove elements from
    * @param predicate a predicate that determines whether an element should be removed
@@ -244,8 +249,7 @@ public final class Iterables {
   }
 
   /** Removes and returns the first matching element, or returns {@code null} if there is none. */
-  @CheckForNull
-  static <T extends @Nullable Object> T removeFirstMatching(
+  static <T extends @Nullable Object> @Nullable T removeFirstMatching(
       Iterable<T> removeFrom, Predicate<? super T> predicate) {
     checkNotNull(predicate);
     Iterator<T> iterator = removeFrom.iterator();
@@ -290,7 +294,7 @@ public final class Iterables {
   /**
    * Returns the single element contained in {@code iterable}.
    *
-   * <p><b>Java 8 users:</b> the {@code Stream} equivalent to this method is {@code
+   * <p><b>Java 8+ users:</b> the {@code Stream} equivalent to this method is {@code
    * stream.collect(MoreCollectors.onlyElement())}.
    *
    * @throws NoSuchElementException if the iterable is empty
@@ -305,7 +309,7 @@ public final class Iterables {
    * Returns the single element contained in {@code iterable}, or {@code defaultValue} if the
    * iterable is empty.
    *
-   * <p><b>Java 8 users:</b> the {@code Stream} equivalent to this method is {@code
+   * <p><b>Java 8+ users:</b> the {@code Stream} equivalent to this method is {@code
    * stream.collect(MoreCollectors.toOptional()).orElse(defaultValue)}.
    *
    * @throws IllegalArgumentException if the iterator contains multiple elements
@@ -375,14 +379,14 @@ public final class Iterables {
    * Returns the number of elements in the specified iterable that equal the specified object. This
    * implementation avoids a full iteration when the iterable is a {@link Multiset} or {@link Set}.
    *
-   * <p><b>Java 8 users:</b> In most cases, the {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> In most cases, the {@code Stream} equivalent of this method is {@code
    * stream.filter(element::equals).count()}. If {@code element} might be null, use {@code
    * stream.filter(Predicate.isEqual(element)).count()} instead.
    *
    * @see java.util.Collections#frequency(Collection, Object) Collections.frequency(Collection,
    *     Object)
    */
-  public static int frequency(Iterable<?> iterable, @CheckForNull Object element) {
+  public static int frequency(Iterable<?> iterable, @Nullable Object element) {
     if ((iterable instanceof Multiset)) {
       return ((Multiset<?>) iterable).count(element);
     } else if ((iterable instanceof Set)) {
@@ -406,7 +410,7 @@ public final class Iterables {
    * <p>To cycle over the iterable {@code n} times, use the following: {@code
    * Iterables.concat(Collections.nCopies(n, iterable))}
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
    * Stream.generate(() -> iterable).flatMap(Streams::stream)}.
    */
   public static <T extends @Nullable Object> Iterable<T> cycle(final Iterable<T> iterable) {
@@ -440,8 +444,8 @@ public final class Iterables {
    * <p>To cycle over the elements {@code n} times, use the following: {@code
    * Iterables.concat(Collections.nCopies(n, Arrays.asList(elements)))}
    *
-   * <p><b>Java 8 users:</b> If passing a single element {@code e}, the {@code Stream} equivalent of
-   * this method is {@code Stream.generate(() -> e)}. Otherwise, put the elements in a collection
+   * <p><b>Java 8+ users:</b> If passing a single element {@code e}, the {@code Stream} equivalent
+   * of this method is {@code Stream.generate(() -> e)}. Otherwise, put the elements in a collection
    * and use {@code Stream.generate(() -> collection).flatMap(Collection::stream)}.
    */
   @SafeVarargs
@@ -457,8 +461,8 @@ public final class Iterables {
    * <p>The returned iterable's iterator supports {@code remove()} when the corresponding input
    * iterator supports it.
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code Stream.concat(a,
-   * b)}.
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
+   * Stream.concat(a, b)}.
    */
   public static <T extends @Nullable Object> Iterable<T> concat(
       Iterable<? extends T> a, Iterable<? extends T> b) {
@@ -473,7 +477,7 @@ public final class Iterables {
    * <p>The returned iterable's iterator supports {@code remove()} when the corresponding input
    * iterator supports it.
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
    * Streams.concat(a, b, c)}.
    */
   public static <T extends @Nullable Object> Iterable<T> concat(
@@ -490,7 +494,7 @@ public final class Iterables {
    * <p>The returned iterable's iterator supports {@code remove()} when the corresponding input
    * iterator supports it.
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
    * Streams.concat(a, b, c, d)}.
    */
   public static <T extends @Nullable Object> Iterable<T> concat(
@@ -509,7 +513,7 @@ public final class Iterables {
    * <p>The returned iterable's iterator supports {@code remove()} when the corresponding input
    * iterator supports it.
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
    * Streams.concat(...)}.
    *
    * @throws NullPointerException if any of the provided iterables is null
@@ -528,7 +532,7 @@ public final class Iterables {
    * iterator supports it. The methods of the returned iterable may throw {@code
    * NullPointerException} if any of the input iterators is null.
    *
-   * <p><b>Java 8 users:</b> The {@code Stream} equivalent of this method is {@code
+   * <p><b>Java 8+ users:</b> The {@code Stream} equivalent of this method is {@code
    * streamOfStreams.flatMap(s -> s)}.
    */
   public static <T extends @Nullable Object> Iterable<T> concat(
@@ -698,12 +702,9 @@ public final class Iterables {
   //   iterables with null elements.)
   //
   // - @JointlyNullable means "@Nullable or no annotation"
-  @CheckForNull
-  public static <T extends @Nullable Object> T find(
-      Iterable<? extends T> iterable,
-      Predicate<? super T> predicate,
-      @CheckForNull T defaultValue) {
-    return Iterators.find(iterable.iterator(), predicate, defaultValue);
+  public static <T extends @Nullable Object> @Nullable T find(
+      Iterable<? extends T> iterable, Predicate<? super T> predicate, @Nullable T defaultValue) {
+    return Iterators.<T>find(iterable.iterator(), predicate, defaultValue);
   }
 
   /**
@@ -801,7 +802,7 @@ public final class Iterables {
     checkNotNull(iterable);
     Iterators.checkNonnegative(position);
     if (iterable instanceof List) {
-      List<? extends T> list = Lists.cast(iterable);
+      List<? extends T> list = (List<? extends T>) iterable;
       return (position < list.size()) ? list.get(position) : defaultValue;
     } else {
       Iterator<? extends T> iterator = iterable.iterator();
@@ -875,7 +876,7 @@ public final class Iterables {
       if (c.isEmpty()) {
         return defaultValue;
       } else if (iterable instanceof List) {
-        return getLastInNonemptyList(Lists.cast(iterable));
+        return getLastInNonemptyList((List<? extends T>) iterable);
       }
     }
 

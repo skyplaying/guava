@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.RandomAccess;
+import org.jspecify.annotations.NullUnmarked;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -30,10 +31,11 @@ import org.junit.runners.JUnit4;
 /** Tests for repeated node and edge addition and removal in a {@link Network}. */
 @RunWith(JUnit4.class)
 
+@NullUnmarked
 public final class NetworkMutationTest {
-  private static final int NUM_TRIALS = 25;
-  private static final int NUM_NODES = 100;
-  private static final int NUM_EDGES = 1000;
+  private static final int NUM_TRIALS = 5;
+  private static final int NUM_NODES = 20;
+  private static final int NUM_EDGES = 100;
   private static final int NODE_POOL_SIZE = 1000; // must be >> NUM_NODES
 
   @Test

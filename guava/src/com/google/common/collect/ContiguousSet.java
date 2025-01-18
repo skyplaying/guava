@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
+import com.google.common.annotations.J2ktIncompatible;
 import com.google.errorprone.annotations.DoNotCall;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -49,7 +50,6 @@ import java.util.Set;
  */
 @GwtCompatible(emulated = true)
 @SuppressWarnings("rawtypes") // allow ungenerified Comparable types
-@ElementTypesAreNonnullByDefault
 public abstract class ContiguousSet<C extends Comparable> extends ImmutableSortedSet<C> {
   /**
    * Returns a {@code ContiguousSet} containing the same values in the given domain {@linkplain
@@ -154,7 +154,9 @@ public abstract class ContiguousSet<C extends Comparable> extends ImmutableSorte
     return headSetImpl(checkNotNull(toElement), false);
   }
 
-  /** @since 12.0 */
+  /**
+   * @since 12.0
+   */
   @GwtIncompatible // NavigableSet
   @Override
   public ContiguousSet<C> headSet(C toElement, boolean inclusive) {
@@ -169,7 +171,9 @@ public abstract class ContiguousSet<C extends Comparable> extends ImmutableSorte
     return subSetImpl(fromElement, true, toElement, false);
   }
 
-  /** @since 12.0 */
+  /**
+   * @since 12.0
+   */
   @GwtIncompatible // NavigableSet
   @Override
   public ContiguousSet<C> subSet(
@@ -185,7 +189,9 @@ public abstract class ContiguousSet<C extends Comparable> extends ImmutableSorte
     return tailSetImpl(checkNotNull(fromElement), true);
   }
 
-  /** @since 12.0 */
+  /**
+   * @since 12.0
+   */
   @GwtIncompatible // NavigableSet
   @Override
   public ContiguousSet<C> tailSet(C fromElement, boolean inclusive) {
@@ -258,5 +264,14 @@ public abstract class ContiguousSet<C extends Comparable> extends ImmutableSorte
   @DoNotCall("Always throws UnsupportedOperationException")
   public static <E> ImmutableSortedSet.Builder<E> builder() {
     throw new UnsupportedOperationException();
+  }
+
+  // redeclare to help optimizers with b/310253115
+  @SuppressWarnings("RedundantOverride")
+  @J2ktIncompatible // serialization
+  @Override
+  @GwtIncompatible // serialization
+  Object writeReplace() {
+    return super.writeReplace();
   }
 }

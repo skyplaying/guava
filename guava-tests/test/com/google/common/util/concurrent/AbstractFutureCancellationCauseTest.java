@@ -17,7 +17,9 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 import java.util.HashMap;
@@ -26,12 +28,13 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.concurrent.GuardedBy;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /** Tests for {@link AbstractFuture} with the cancellation cause system property set */
 @AndroidIncompatible // custom classloading
 
+@NullUnmarked
 public class AbstractFutureCancellationCauseTest extends TestCase {
 
   private ClassLoader oldClassLoader;
@@ -89,12 +92,8 @@ public class AbstractFutureCancellationCauseTest extends TestCase {
     assertTrue(future.isCancelled());
     assertTrue(future.isDone());
     assertNull(tryInternalFastPathGetFailure(future));
-    try {
-      future.get();
-      fail("Expected CancellationException");
-    } catch (CancellationException e) {
-      assertNotNull(e.getCause());
-    }
+    CancellationException e = assertThrows(CancellationException.class, () -> future.get());
+    assertNotNull(e.getCause());
   }
 
   public void testCancel_notDoneInterrupt() throws Exception {
@@ -103,12 +102,8 @@ public class AbstractFutureCancellationCauseTest extends TestCase {
     assertTrue(future.isCancelled());
     assertTrue(future.isDone());
     assertNull(tryInternalFastPathGetFailure(future));
-    try {
-      future.get();
-      fail("Expected CancellationException");
-    } catch (CancellationException e) {
-      assertNotNull(e.getCause());
-    }
+    CancellationException e = assertThrows(CancellationException.class, () -> future.get());
+    assertNotNull(e.getCause());
   }
 
   public void testSetFuture_misbehavingFutureDoesNotThrow() throws Exception {
@@ -151,13 +146,9 @@ public class AbstractFutureCancellationCauseTest extends TestCase {
             "setFuture",
             future.getClass().getClassLoader().loadClass(ListenableFuture.class.getName()))
         .invoke(future, badFuture);
-    try {
-      future.get();
-      fail();
-    } catch (CancellationException expected) {
-      assertThat(expected).hasCauseThat().isInstanceOf(IllegalArgumentException.class);
-      assertThat(expected).hasCauseThat().hasMessageThat().contains(badFuture.toString());
-    }
+    CancellationException expected = assertThrows(CancellationException.class, () -> future.get());
+    assertThat(expected).hasCauseThat().isInstanceOf(IllegalArgumentException.class);
+    assertThat(expected).hasCauseThat().hasMessageThat().contains(badFuture.toString());
   }
 
   private Future<?> newFutureInstance() throws Exception {

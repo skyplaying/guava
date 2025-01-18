@@ -73,7 +73,6 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
  * @since 20.0
  */
 @Beta
-@ElementTypesAreNonnullByDefault
 public final class ValueGraphBuilder<N, V> extends AbstractGraphBuilder<N> {
 
   /** Creates a new instance with the specified edge directionality. */
@@ -182,6 +181,7 @@ public final class ValueGraphBuilder<N, V> extends AbstractGraphBuilder<N> {
     newBuilder.incidentEdgeOrder = checkNotNull(incidentEdgeOrder);
     return newBuilder;
   }
+
   /**
    * Returns an empty {@link MutableValueGraph} with the properties of this {@link
    * ValueGraphBuilder}.

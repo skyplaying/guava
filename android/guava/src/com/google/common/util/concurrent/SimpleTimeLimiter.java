@@ -16,6 +16,7 @@ package com.google.common.util.concurrent;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.Uninterruptibles.getUninterruptibly;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
@@ -34,8 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A TimeLimiter that runs method calls in the background using an {@link ExecutorService}. If the
@@ -47,7 +47,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
+// TODO: b/227335009 - Maybe change interruption behavior, but it requires thought.
+@SuppressWarnings("Interruption")
 public final class SimpleTimeLimiter implements TimeLimiter {
 
   private final ExecutorService executor;
@@ -85,9 +86,8 @@ public final class SimpleTimeLimiter implements TimeLimiter {
     InvocationHandler handler =
         new InvocationHandler() {
           @Override
-          @CheckForNull
-          public Object invoke(Object obj, Method method, @CheckForNull @Nullable Object[] args)
-              throws Throwable {
+          public @Nullable Object invoke(
+              Object obj, Method method, @Nullable Object @Nullable [] args) throws Throwable {
             Callable<@Nullable Object> callable =
                 () -> {
                   try {
@@ -122,16 +122,12 @@ public final class SimpleTimeLimiter implements TimeLimiter {
     Future<T> future = executor.submit(callable);
 
     try {
-      if (amInterruptible) {
-        try {
-          return future.get(timeoutDuration, timeoutUnit);
-        } catch (InterruptedException e) {
-          future.cancel(true);
-          throw e;
-        }
-      } else {
-        return Uninterruptibles.getUninterruptibly(future, timeoutDuration, timeoutUnit);
-      }
+      return amInterruptible
+          ? future.get(timeoutDuration, timeoutUnit)
+          : getUninterruptibly(future, timeoutDuration, timeoutUnit);
+    } catch (InterruptedException e) {
+      future.cancel(true);
+      throw e;
     } catch (ExecutionException e) {
       throw throwCause(e, true /* combineStackTraces */);
     } catch (TimeoutException e) {
@@ -176,7 +172,7 @@ public final class SimpleTimeLimiter implements TimeLimiter {
     Future<T> future = executor.submit(callable);
 
     try {
-      return Uninterruptibles.getUninterruptibly(future, timeoutDuration, timeoutUnit);
+      return getUninterruptibly(future, timeoutDuration, timeoutUnit);
     } catch (TimeoutException e) {
       future.cancel(true /* mayInterruptIfRunning */);
       throw e;
@@ -216,7 +212,7 @@ public final class SimpleTimeLimiter implements TimeLimiter {
     Future<?> future = executor.submit(runnable);
 
     try {
-      Uninterruptibles.getUninterruptibly(future, timeoutDuration, timeoutUnit);
+      getUninterruptibly(future, timeoutDuration, timeoutUnit);
     } catch (TimeoutException e) {
       future.cancel(true /* mayInterruptIfRunning */);
       throw e;

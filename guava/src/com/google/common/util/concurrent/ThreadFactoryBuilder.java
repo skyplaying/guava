@@ -26,7 +26,7 @@ import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A ThreadFactory builder, providing any combination of these features:
@@ -42,18 +42,21 @@ import javax.annotation.CheckForNull;
  * <p>If no backing thread factory is provided, a default backing thread factory is used as if by
  * calling {@code setThreadFactory(}{@link Executors#defaultThreadFactory()}{@code )}.
  *
+ * <p><b>Java 21+ users:</b> consider using the {@code Thread.Builder} interface instead. E.g.,
+ * instead of {@code new ThreadFactoryBuilder().setPriority(priority).setDaemon(false).build()}, use
+ * {@code Thread.ofPlatform().priority(priority).daemon(false).factory()}.
+ *
  * @author Kurt Alfred Kluever
  * @since 4.0
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class ThreadFactoryBuilder {
-  @CheckForNull private String nameFormat = null;
-  @CheckForNull private Boolean daemon = null;
-  @CheckForNull private Integer priority = null;
-  @CheckForNull private UncaughtExceptionHandler uncaughtExceptionHandler = null;
-  @CheckForNull private ThreadFactory backingThreadFactory = null;
+  private @Nullable String nameFormat = null;
+  private @Nullable Boolean daemon = null;
+  private @Nullable Integer priority = null;
+  private @Nullable UncaughtExceptionHandler uncaughtExceptionHandler = null;
+  private @Nullable ThreadFactory backingThreadFactory = null;
 
   /** Creates a new {@link ThreadFactory} builder. */
   public ThreadFactoryBuilder() {}

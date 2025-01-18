@@ -30,7 +30,8 @@ import java.util.Queue;
 import java.util.SortedSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An unbounded {@linkplain BlockingQueue blocking queue} that uses the same ordering rules as class
@@ -76,6 +77,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Justin T. Sampson
  * @param <E> the type of elements held in this collection
  */
+@NullUnmarked
 public class MonitorBasedPriorityBlockingQueue<E> extends AbstractQueue<E>
     implements BlockingQueue<E> {
 
@@ -550,21 +552,6 @@ public class MonitorBasedPriorityBlockingQueue<E> extends AbstractQueue<E>
       } finally {
         monitor.leave();
       }
-    }
-  }
-
-  /**
-   * Saves the state to a stream (that is, serializes it). This merely wraps default serialization
-   * within the monitor. The serialization strategy for items is left to underlying Queue. Note that
-   * locking is not needed on deserialization, so readObject is not defined, just relying on
-   * default.
-   */
-  private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException {
-    monitor.enter();
-    try {
-      s.defaultWriteObject();
-    } finally {
-      monitor.leave();
     }
   }
 }

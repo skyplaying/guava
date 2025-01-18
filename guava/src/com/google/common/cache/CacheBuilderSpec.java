@@ -16,6 +16,10 @@ package com.google.common.cache;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.VisibleForTesting;
@@ -28,8 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A specification of a {@link CacheBuilder} configuration.
@@ -80,11 +83,10 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 @SuppressWarnings("GoodTime") // lots of violations (nanosecond math)
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 public final class CacheBuilderSpec {
   /** Parses a single value. */
   private interface ValueParser {
-    void parse(CacheBuilderSpec spec, String key, @CheckForNull String value);
+    void parse(CacheBuilderSpec spec, String key, @Nullable String value);
   }
 
   /** Splits each key-value pair. */
@@ -110,19 +112,20 @@ public final class CacheBuilderSpec {
           .put("refreshInterval", new RefreshDurationParser())
           .buildOrThrow();
 
-  @VisibleForTesting @CheckForNull Integer initialCapacity;
-  @VisibleForTesting @CheckForNull Long maximumSize;
-  @VisibleForTesting @CheckForNull Long maximumWeight;
-  @VisibleForTesting @CheckForNull Integer concurrencyLevel;
-  @VisibleForTesting @CheckForNull Strength keyStrength;
-  @VisibleForTesting @CheckForNull Strength valueStrength;
-  @VisibleForTesting @CheckForNull Boolean recordStats;
+  @VisibleForTesting @Nullable Integer initialCapacity;
+  @VisibleForTesting @Nullable Long maximumSize;
+  @VisibleForTesting @Nullable Long maximumWeight;
+  @VisibleForTesting @Nullable Integer concurrencyLevel;
+  @VisibleForTesting @Nullable Strength keyStrength;
+  @VisibleForTesting @Nullable Strength valueStrength;
+  @VisibleForTesting @Nullable Boolean recordStats;
   @VisibleForTesting long writeExpirationDuration;
-  @VisibleForTesting @CheckForNull TimeUnit writeExpirationTimeUnit;
+  @VisibleForTesting @Nullable TimeUnit writeExpirationTimeUnit;
   @VisibleForTesting long accessExpirationDuration;
-  @VisibleForTesting @CheckForNull TimeUnit accessExpirationTimeUnit;
+  @VisibleForTesting @Nullable TimeUnit accessExpirationTimeUnit;
   @VisibleForTesting long refreshDuration;
-  @VisibleForTesting @CheckForNull TimeUnit refreshTimeUnit;
+  @VisibleForTesting @Nullable TimeUnit refreshTimeUnit;
+
   /** Specification; used for toParseableString(). */
   private final String specification;
 
@@ -251,7 +254,7 @@ public final class CacheBuilderSpec {
   }
 
   @Override
-  public boolean equals(@CheckForNull Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -281,8 +284,7 @@ public final class CacheBuilderSpec {
    * Converts an expiration duration/unit pair into a single Long for hashing and equality. Uses
    * nanos to match CacheBuilder implementation.
    */
-  @CheckForNull
-  private static Long durationInNanos(long duration, @CheckForNull TimeUnit unit) {
+  private static @Nullable Long durationInNanos(long duration, @Nullable TimeUnit unit) {
     return (unit == null) ? null : unit.toNanos(duration);
   }
 
@@ -379,7 +381,7 @@ public final class CacheBuilderSpec {
     }
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @CheckForNull String value) {
+    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
       checkArgument(value == null, "key %s does not take values", key);
       checkArgument(spec.keyStrength == null, "%s was already set to %s", key, spec.keyStrength);
       spec.keyStrength = strength;
@@ -395,7 +397,7 @@ public final class CacheBuilderSpec {
     }
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @CheckForNull String value) {
+    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
       checkArgument(value == null, "key %s does not take values", key);
       checkArgument(
           spec.valueStrength == null, "%s was already set to %s", key, spec.valueStrength);
@@ -408,7 +410,7 @@ public final class CacheBuilderSpec {
   static class RecordStatsParser implements ValueParser {
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @CheckForNull String value) {
+    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
       checkArgument(value == null, "recordStats does not take values");
       checkArgument(spec.recordStats == null, "recordStats already set");
       spec.recordStats = true;
@@ -420,7 +422,7 @@ public final class CacheBuilderSpec {
     protected abstract void parseDuration(CacheBuilderSpec spec, long duration, TimeUnit unit);
 
     @Override
-    public void parse(CacheBuilderSpec spec, String key, @CheckForNull String value) {
+    public void parse(CacheBuilderSpec spec, String key, @Nullable String value) {
       if (isNullOrEmpty(value)) {
         throw new IllegalArgumentException("value of key " + key + " omitted");
       }
@@ -429,16 +431,16 @@ public final class CacheBuilderSpec {
         TimeUnit timeUnit;
         switch (lastChar) {
           case 'd':
-            timeUnit = TimeUnit.DAYS;
+            timeUnit = DAYS;
             break;
           case 'h':
-            timeUnit = TimeUnit.HOURS;
+            timeUnit = HOURS;
             break;
           case 'm':
-            timeUnit = TimeUnit.MINUTES;
+            timeUnit = MINUTES;
             break;
           case 's':
-            timeUnit = TimeUnit.SECONDS;
+            timeUnit = SECONDS;
             break;
           default:
             throw new IllegalArgumentException(

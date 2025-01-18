@@ -17,6 +17,7 @@ package com.google.common.io;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkPositionIndexes;
+import static java.lang.Math.min;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.annotations.J2ktIncompatible;
@@ -46,7 +47,6 @@ import java.util.Arrays;
  */
 @J2ktIncompatible
 @GwtIncompatible
-@ElementTypesAreNonnullByDefault
 final class ReaderInputStream extends InputStream {
   private final Reader reader;
   private final CharsetEncoder encoder;
@@ -67,8 +67,10 @@ final class ReaderInputStream extends InputStream {
 
   /** Whether we've finished reading the reader. */
   private boolean endOfInput;
+
   /** Whether we're copying encoded bytes to the caller's buffer. */
   private boolean draining;
+
   /** Whether we've successfully flushed the encoder. */
   private boolean doneFlushing;
 
@@ -251,7 +253,7 @@ final class ReaderInputStream extends InputStream {
    * number of characters copied.
    */
   private int drain(byte[] b, int off, int len) {
-    int remaining = Math.min(len, byteBuffer.remaining());
+    int remaining = min(len, byteBuffer.remaining());
     byteBuffer.get(b, off, remaining);
     return remaining;
   }

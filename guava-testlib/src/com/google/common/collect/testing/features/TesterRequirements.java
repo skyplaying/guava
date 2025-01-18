@@ -16,11 +16,12 @@
 
 package com.google.common.collect.testing.features;
 
+import static com.google.common.collect.testing.Helpers.copyToSet;
+
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.collect.testing.Helpers;
 import java.util.Collections;
 import java.util.Set;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Encapsulates the constraints that a class under test must satisfy in order for a tester method to
@@ -34,8 +35,8 @@ public final class TesterRequirements {
   private final Set<Feature<?>> absentFeatures;
 
   public TesterRequirements(Set<Feature<?>> presentFeatures, Set<Feature<?>> absentFeatures) {
-    this.presentFeatures = Helpers.copyToSet(presentFeatures);
-    this.absentFeatures = Helpers.copyToSet(absentFeatures);
+    this.presentFeatures = copyToSet(presentFeatures);
+    this.absentFeatures = copyToSet(absentFeatures);
   }
 
   public TesterRequirements(TesterRequirements tr) {

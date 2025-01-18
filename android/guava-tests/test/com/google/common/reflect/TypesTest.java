@@ -18,6 +18,7 @@ package com.google.common.reflect;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.Lists;
 import com.google.common.testing.EqualsTester;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import junit.framework.TestCase;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Tests for {@link Types}.
@@ -43,6 +45,7 @@ import junit.framework.TestCase;
  * @author Ben Yu
  */
 @AndroidIncompatible // lots of failures, possibly some related to bad equals() implementations?
+@NullUnmarked
 public class TypesTest extends TestCase {
   public void testNewParameterizedType_ownerTypeImplied() throws Exception {
     ParameterizedType jvmType =
@@ -81,10 +84,10 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewParameterizedType_staticLocalClass() {
-    doTestNewParameterizedType_staticLocalClass();
+    doTestNewParameterizedTypeStaticLocalClass();
   }
 
-  private static void doTestNewParameterizedType_staticLocalClass() {
+  private static void doTestNewParameterizedTypeStaticLocalClass() {
     class LocalClass<T> {}
     Type jvmType = new LocalClass<String>() {}.getClass().getGenericSuperclass();
     Type ourType = Types.newParameterizedType(LocalClass.class, String.class);
@@ -117,11 +120,9 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewParameterizedType_ownerMismatch() {
-    try {
-      Types.newParameterizedTypeWithOwner(Number.class, List.class, String.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Types.newParameterizedTypeWithOwner(Number.class, List.class, String.class));
   }
 
   public void testNewParameterizedType_ownerMissing() {
@@ -131,25 +132,22 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewParameterizedType_invalidTypeParameters() {
-    try {
-      Types.newParameterizedTypeWithOwner(Map.class, Entry.class, String.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Types.newParameterizedTypeWithOwner(Map.class, Entry.class, String.class));
   }
 
   public void testNewParameterizedType_primitiveTypeParameters() {
-    try {
-      Types.newParameterizedTypeWithOwner(Map.class, Entry.class, int.class, int.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Types.newParameterizedTypeWithOwner(Map.class, Entry.class, int.class, int.class));
   }
 
   public void testNewArrayType() {
     Type jvmType1 = new TypeCapture<List<String>[]>() {}.capture();
     GenericArrayType ourType1 =
         (GenericArrayType) Types.newArrayType(Types.newParameterizedType(List.class, String.class));
+    @SuppressWarnings("rawtypes") // test of raw types
     Type jvmType2 = new TypeCapture<List[]>() {}.capture();
     Type ourType2 = Types.newArrayType(List.class);
     new EqualsTester()
@@ -234,11 +232,7 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewWildcardType_primitiveTypeBound() {
-    try {
-      Types.subtypeOf(int.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(IllegalArgumentException.class, () -> Types.subtypeOf(int.class));
   }
 
   public void testNewWildcardType_serializable() {
@@ -265,7 +259,16 @@ public class TypesTest extends TestCase {
     @SuppressWarnings("unused")
     <T> void withoutBound(List<T> list) {}
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({
+      "unused",
+      /*
+       * Since reflection can't tell the difference between <T> and <T extends Object>, it doesn't
+       * make a ton of sense to have a separate tests for each. But having tests for each doesn't
+       * really hurt anything, and maybe it will serve a purpose in a future in which Java has a
+       * built-in nullness feature?
+       */
+      "ExtendsObject",
+    })
     <T extends Object> void withObjectBound(List<T> list) {}
 
     @SuppressWarnings("unused")
@@ -301,19 +304,15 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewTypeVariable_primitiveTypeBound() {
-    try {
-      Types.newArtificialTypeVariable(List.class, "E", int.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Types.newArtificialTypeVariable(List.class, "E", int.class));
   }
 
   public void testNewTypeVariable_serializable() throws Exception {
-    try {
-      SerializableTester.reserialize(Types.newArtificialTypeVariable(List.class, "E"));
-      fail();
-    } catch (RuntimeException expected) {
-    }
+    assertThrows(
+        RuntimeException.class,
+        () -> SerializableTester.reserialize(Types.newArtificialTypeVariable(List.class, "E")));
   }
 
   private static <D extends GenericDeclaration> TypeVariable<D> withBounds(
@@ -372,11 +371,9 @@ public class TypesTest extends TestCase {
   }
 
   public void testNewParameterizedTypeWithWrongNumberOfTypeArguments() {
-    try {
-      Types.newParameterizedType(Map.class, String.class, Integer.class, Long.class);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Types.newParameterizedType(Map.class, String.class, Integer.class, Long.class));
   }
 
   public void testToString() {

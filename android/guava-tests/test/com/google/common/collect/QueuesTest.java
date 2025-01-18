@@ -24,6 +24,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Stopwatch;
 import java.util.Collection;
@@ -40,13 +41,15 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tests for {@link Queues}.
  *
  * @author Dimitris Andreou
  */
+@NullUnmarked
 public class QueuesTest extends TestCase {
   /*
    * All the following tests relate to BlockingQueue methods in Queues.
@@ -122,11 +125,11 @@ public class QueuesTest extends TestCase {
 
   public void testDrainTimesOut() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testDrainTimesOut(q);
+      checkDrainTimesOut(q);
     }
   }
 
-  private void testDrainTimesOut(BlockingQueue<Object> q) throws Exception {
+  private void checkDrainTimesOut(BlockingQueue<Object> q) throws Exception {
     for (boolean interruptibly : new boolean[] {true, false}) {
       assertEquals(0, Queues.drain(q, ImmutableList.of(), 1, 10, MILLISECONDS));
 
@@ -154,11 +157,11 @@ public class QueuesTest extends TestCase {
 
   public void testZeroElements() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testZeroElements(q);
+      checkZeroElements(q);
     }
   }
 
-  private void testZeroElements(BlockingQueue<Object> q) throws InterruptedException {
+  private void checkZeroElements(BlockingQueue<Object> q) throws InterruptedException {
     for (boolean interruptibly : new boolean[] {true, false}) {
       // asking to drain zero elements
       assertEquals(0, drain(q, ImmutableList.of(), 0, 10, MILLISECONDS, interruptibly));
@@ -167,21 +170,21 @@ public class QueuesTest extends TestCase {
 
   public void testEmpty() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testEmpty(q);
+      checkEmpty(q);
     }
   }
 
-  private void testEmpty(BlockingQueue<Object> q) {
+  private void checkEmpty(BlockingQueue<Object> q) {
     assertDrained(q);
   }
 
   public void testNegativeMaxElements() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testNegativeMaxElements(q);
+      checkNegativeMaxElements(q);
     }
   }
 
-  private void testNegativeMaxElements(BlockingQueue<Object> q) throws InterruptedException {
+  private void checkNegativeMaxElements(BlockingQueue<Object> q) throws InterruptedException {
     @SuppressWarnings("unused") // https://errorprone.info/bugpattern/FutureReturnValueIgnored
     Future<?> possiblyIgnoredError = threadPool.submit(new Producer(q, 1));
 
@@ -196,11 +199,11 @@ public class QueuesTest extends TestCase {
 
   public void testDrain_throws() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testDrain_throws(q);
+      checkDrainThrows(q);
     }
   }
 
-  private void testDrain_throws(BlockingQueue<Object> q) {
+  private void checkDrainThrows(BlockingQueue<Object> q) {
     @SuppressWarnings("unused") // https://errorprone.info/bugpattern/FutureReturnValueIgnored
     Future<?> possiblyIgnoredError = threadPool.submit(new Interrupter(currentThread()));
     try {
@@ -212,11 +215,11 @@ public class QueuesTest extends TestCase {
 
   public void testDrainUninterruptibly_doesNotThrow() throws Exception {
     for (BlockingQueue<Object> q : blockingQueues()) {
-      testDrainUninterruptibly_doesNotThrow(q);
+      testDrainUninterruptiblyDoesNotThrow(q);
     }
   }
 
-  private void testDrainUninterruptibly_doesNotThrow(final BlockingQueue<Object> q) {
+  private void testDrainUninterruptiblyDoesNotThrow(final BlockingQueue<Object> q) {
     final Thread mainThread = currentThread();
     @SuppressWarnings("unused") // https://errorprone.info/bugpattern/FutureReturnValueIgnored
     Future<?> possiblyIgnoredError =
@@ -239,23 +242,13 @@ public class QueuesTest extends TestCase {
   }
 
   public void testNewLinkedBlockingDequeCapacity() {
-    try {
-      Queues.newLinkedBlockingDeque(0);
-      fail("Should have thrown IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-      // any capacity less than 1 should throw IllegalArgumentException
-    }
+    assertThrows(IllegalArgumentException.class, () -> Queues.newLinkedBlockingDeque(0));
     assertEquals(1, Queues.newLinkedBlockingDeque(1).remainingCapacity());
     assertEquals(11, Queues.newLinkedBlockingDeque(11).remainingCapacity());
   }
 
   public void testNewLinkedBlockingQueueCapacity() {
-    try {
-      Queues.newLinkedBlockingQueue(0);
-      fail("Should have thrown IllegalArgumentException");
-    } catch (IllegalArgumentException expected) {
-      // any capacity less than 1 should throw IllegalArgumentException
-    }
+    assertThrows(IllegalArgumentException.class, () -> Queues.newLinkedBlockingQueue(0));
     assertEquals(1, Queues.newLinkedBlockingQueue(1).remainingCapacity());
     assertEquals(11, Queues.newLinkedBlockingQueue(11).remainingCapacity());
   }
@@ -288,6 +281,7 @@ public class QueuesTest extends TestCase {
   }
 
   // same as above; uninterruptible version
+  @SuppressWarnings("ThreadPriorityCheck") // TODO: b/175898629 - Consider onSpinWait.
   private void assertUninterruptibleDrained(BlockingQueue<Object> q) {
     assertEquals(0, Queues.drainUninterruptibly(q, ImmutableList.of(), 0, 10, MILLISECONDS));
 

@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 /**
@@ -104,13 +103,13 @@ public class IteratorTesterTest extends TestCase {
    * to remove() will incorrectly throw an IllegalStateException, instead of removing the last
    * element returned.
    *
-   * <p>See <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6529795">Sun bug 6529795</a>
+   * <p>See <a href="https://bugs.openjdk.org/browse/JDK-6529795">JDK-6529795</a>
    */
-  static class IteratorWithSunJavaBug6529795<T> implements Iterator<T> {
+  static class IteratorWithJdkBug6529795<T> implements Iterator<T> {
     Iterator<T> iterator;
     boolean nextThrewException;
 
-    IteratorWithSunJavaBug6529795(Iterator<T> iterator) {
+    IteratorWithJdkBug6529795(Iterator<T> iterator) {
       this.iterator = iterator;
     }
 
@@ -138,7 +137,7 @@ public class IteratorTesterTest extends TestCase {
     }
   }
 
-  public void testCanCatchSunJavaBug6529795InTargetIterator() {
+  public void testCanCatchJdkBug6529795InTargetIterator() {
     try {
       /* Choose 4 steps to get sequence [next, next, next, remove] */
       new IteratorTester<Integer>(
@@ -146,10 +145,10 @@ public class IteratorTesterTest extends TestCase {
         @Override
         protected Iterator<Integer> newTargetIterator() {
           Iterator<Integer> iterator = Lists.newArrayList(1, 2).iterator();
-          return new IteratorWithSunJavaBug6529795<>(iterator);
+          return new IteratorWithJdkBug6529795<>(iterator);
         }
       }.test();
-    } catch (AssertionFailedError e) {
+    } catch (AssertionError e) {
       return;
     }
     fail("Should have caught jdk6 bug in target iterator");
@@ -201,18 +200,18 @@ public class IteratorTesterTest extends TestCase {
 
           @Override
           protected void verify(List<Integer> elements) {
-            throw new AssertionFailedError(message);
+            throw new AssertionError(message);
           }
         };
-    AssertionFailedError actual = null;
+    AssertionError actual = null;
     try {
       tester.test();
-    } catch (AssertionFailedError e) {
+    } catch (AssertionError e) {
       actual = e;
     }
     assertNotNull("verify() should be able to cause test failure", actual);
     assertTrue(
-        "AssertionFailedError should have info about why test failed",
+        "AssertionError should have info about why test failed",
         actual.getCause().getMessage().contains(message));
   }
 
@@ -323,7 +322,7 @@ public class IteratorTesterTest extends TestCase {
   private static void assertFailure(IteratorTester<?> tester) {
     try {
       tester.test();
-    } catch (AssertionFailedError expected) {
+    } catch (AssertionError expected) {
       return;
     }
     fail();

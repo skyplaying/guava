@@ -22,7 +22,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper functions that operate on any {@code Object}, and are not already provided in {@link
@@ -36,7 +36,6 @@ import javax.annotation.CheckForNull;
  * @since 18.0 (since 2.0 as {@code Objects})
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 public final class MoreObjects {
   /**
    * Returns the first of two given parameters that is not {@code null}, if either is, or otherwise
@@ -58,7 +57,7 @@ public final class MoreObjects {
    * @throws NullPointerException if both {@code first} and {@code second} are null
    * @since 18.0 (since 3.0 as {@code Objects.firstNonNull()}).
    */
-  public static <T> T firstNonNull(@CheckForNull T first, @CheckForNull T second) {
+  public static <T> T firstNonNull(@Nullable T first, @Nullable T second) {
     if (first != null) {
       return first;
     }
@@ -170,12 +169,30 @@ public final class MoreObjects {
     }
 
     /**
+     * Configures the {@link ToStringHelper} so {@link #toString()} will ignore properties with
+     * empty values. The order of calling this method, relative to the {@code add()}/{@code
+     * addValue()} methods, is not significant.
+     *
+     * <p><b>Note:</b> in general, code should assume that the string form returned by {@code
+     * ToStringHelper} for a given object may change. In particular, the list of types which are
+     * checked for emptiness is subject to change. We currently check {@code CharSequence}s, {@code
+     * Collection}s, {@code Map}s, optionals (including Guava's), and arrays.
+     *
+     * @since 33.4.0
+     */
+    @CanIgnoreReturnValue
+    public ToStringHelper omitEmptyValues() {
+      omitEmptyValues = true;
+      return this;
+    }
+
+    /**
      * Adds a name/value pair to the formatted output in {@code name=value} format. If {@code value}
      * is {@code null}, the string {@code "null"} is used, unless {@link #omitNullValues()} is
      * called, in which case this name/value pair will not be added.
      */
     @CanIgnoreReturnValue
-    public ToStringHelper add(String name, @CheckForNull Object value) {
+    public ToStringHelper add(String name, @Nullable Object value) {
       return addHolder(name, value);
     }
 
@@ -246,7 +263,7 @@ public final class MoreObjects {
      * readable name.
      */
     @CanIgnoreReturnValue
-    public ToStringHelper addValue(@CheckForNull Object value) {
+    public ToStringHelper addValue(@Nullable Object value) {
       return addHolder(value);
     }
 
@@ -392,14 +409,14 @@ public final class MoreObjects {
     }
 
     @CanIgnoreReturnValue
-    private ToStringHelper addHolder(@CheckForNull Object value) {
+    private ToStringHelper addHolder(@Nullable Object value) {
       ValueHolder valueHolder = addHolder();
       valueHolder.value = value;
       return this;
     }
 
     @CanIgnoreReturnValue
-    private ToStringHelper addHolder(String name, @CheckForNull Object value) {
+    private ToStringHelper addHolder(String name, @Nullable Object value) {
       ValueHolder valueHolder = addHolder();
       valueHolder.value = value;
       valueHolder.name = checkNotNull(name);
@@ -428,10 +445,10 @@ public final class MoreObjects {
     }
 
     // Holder object for values that might be null and/or empty.
-    private static class ValueHolder {
-      @CheckForNull String name;
-      @CheckForNull Object value;
-      @CheckForNull ValueHolder next;
+    static class ValueHolder {
+      @Nullable String name;
+      @Nullable Object value;
+      @Nullable ValueHolder next;
     }
 
     /**

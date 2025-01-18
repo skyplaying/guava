@@ -19,17 +19,19 @@ package com.google.common.collect;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.NullnessCasts.uncheckedCastNullableTToT;
+import static java.lang.Math.max;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.sort;
+import static java.util.Collections.unmodifiableList;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.math.IntMath;
 import java.math.RoundingMode;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.CheckForNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An accumulator that selects the "top" {@code k} elements added to it, relative to a provided
@@ -53,7 +55,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  * @author Louis Wasserman
  */
 @GwtCompatible
-@ElementTypesAreNonnullByDefault
 final class TopKSelector<
     T extends @Nullable Object> {
 
@@ -76,7 +77,7 @@ final class TopKSelector<
    */
   public static <T extends @Nullable Object> TopKSelector<T> least(
       int k, Comparator<? super T> comparator) {
-    return new TopKSelector<T>(comparator, k);
+    return new TopKSelector<>(comparator, k);
   }
 
   /**
@@ -98,7 +99,7 @@ final class TopKSelector<
    */
   public static <T extends @Nullable Object> TopKSelector<T> greatest(
       int k, Comparator<? super T> comparator) {
-    return new TopKSelector<T>(Ordering.from(comparator).reverse(), k);
+    return new TopKSelector<>(Ordering.from(comparator).reverse(), k);
   }
 
   private final int k;
@@ -116,8 +117,9 @@ final class TopKSelector<
    * The largest of the lowest k elements we've seen so far relative to this comparator. If
    * bufferSize ≥ k, then we can ignore any elements greater than this value.
    */
-  @CheckForNull private T threshold;
+  private @Nullable T threshold;
 
+  @SuppressWarnings("unchecked") // TODO(cpovirk): Consider storing Object[] instead of T[].
   private TopKSelector(Comparator<? super T> comparator, int k) {
     this.comparator = checkNotNull(comparator, "comparator");
     this.k = k;
@@ -177,7 +179,7 @@ final class TopKSelector<
       if (pivotNewIndex > k) {
         right = pivotNewIndex - 1;
       } else if (pivotNewIndex < k) {
-        left = Math.max(pivotNewIndex, left + 1);
+        left = max(pivotNewIndex, left + 1);
         minThresholdPosition = pivotNewIndex;
       } else {
         break;
@@ -187,7 +189,7 @@ final class TopKSelector<
         @SuppressWarnings("nullness") // safe because we pass sort() a range that contains real Ts
         T[] castBuffer = (T[]) buffer;
         // We've already taken O(k log k), let's make sure we don't take longer than O(k log k).
-        Arrays.sort(castBuffer, left, right + 1, comparator);
+        sort(castBuffer, left, right + 1, comparator);
         break;
       }
     }
@@ -231,6 +233,13 @@ final class TopKSelector<
     buffer[j] = tmp;
   }
 
+  TopKSelector<T> combine(TopKSelector<T> other) {
+    for (int i = 0; i < other.bufferSize; i++) {
+      this.offer(uncheckedCastNullableTToT(other.buffer[i]));
+    }
+    return this;
+  }
+
   /**
    * Adds each member of {@code elements} as a candidate for the top {@code k} elements. This
    * operation takes amortized linear time in the length of {@code elements}.
@@ -267,7 +276,7 @@ final class TopKSelector<
   public List<T> topK() {
     @SuppressWarnings("nullness") // safe because we pass sort() a range that contains real Ts
     T[] castBuffer = (T[]) buffer;
-    Arrays.sort(castBuffer, 0, bufferSize, comparator);
+    sort(castBuffer, 0, bufferSize, comparator);
     if (bufferSize > k) {
       Arrays.fill(buffer, k, buffer.length, null);
       bufferSize = k;
@@ -276,6 +285,6 @@ final class TopKSelector<
     // Up to bufferSize, all elements of buffer are real Ts (not null unless T includes null)
     T[] topK = Arrays.copyOf(castBuffer, bufferSize);
     // we have to support null elements, so no ImmutableList for us
-    return Collections.unmodifiableList(Arrays.asList(topK));
+    return unmodifiableList(asList(topK));
   }
 }

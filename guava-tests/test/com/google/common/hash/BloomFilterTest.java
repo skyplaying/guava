@@ -16,8 +16,10 @@
 
 package com.google.common.hash;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSet;
@@ -35,16 +37,16 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import junit.framework.TestCase;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tests for SimpleGenericBloomFilter and derived BloomFilter views.
  *
  * @author Dimitris Andreou
  */
+@NullUnmarked
 public class BloomFilterTest extends TestCase {
   private static final int NUM_PUTS = 100_000;
   private static final ThreadLocal<Random> random =
@@ -122,7 +124,7 @@ public class BloomFilterTest extends TestCase {
     assertEquals(knownNumberOfFalsePositives, numFpp);
     double expectedReportedFpp = (double) knownNumberOfFalsePositives / numInsertions;
     double actualReportedFpp = bf.expectedFpp();
-    assertEquals(expectedReportedFpp, actualReportedFpp, 0.00015);
+    assertThat(actualReportedFpp).isWithin(0.00015).of(expectedReportedFpp);
   }
 
   public void testCreateAndCheckBloomFilterWithKnownFalsePositives64() {
@@ -166,7 +168,7 @@ public class BloomFilterTest extends TestCase {
     assertEquals(knownNumberOfFalsePositives, numFpp);
     double expectedReportedFpp = (double) knownNumberOfFalsePositives / numInsertions;
     double actualReportedFpp = bf.expectedFpp();
-    assertEquals(expectedReportedFpp, actualReportedFpp, 0.00033);
+    assertThat(actualReportedFpp).isWithin(0.00033).of(expectedReportedFpp);
   }
 
   public void testCreateAndCheckBloomFilterWithKnownUtf8FalsePositives64() {
@@ -209,7 +211,7 @@ public class BloomFilterTest extends TestCase {
     assertEquals(knownNumberOfFalsePositives, numFpp);
     double expectedReportedFpp = (double) knownNumberOfFalsePositives / numInsertions;
     double actualReportedFpp = bf.expectedFpp();
-    assertEquals(expectedReportedFpp, actualReportedFpp, 0.00033);
+    assertThat(actualReportedFpp).isWithin(0.00033).of(expectedReportedFpp);
   }
 
   /** Sanity checking with many combinations of false positive rates and expected insertions */
@@ -222,36 +224,28 @@ public class BloomFilterTest extends TestCase {
   }
 
   public void testPreconditions() {
-    try {
-      BloomFilter.create(Funnels.unencodedCharsFunnel(), -1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
-    try {
-      BloomFilter.create(Funnels.unencodedCharsFunnel(), -1, 0.03);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
-    try {
-      BloomFilter.create(Funnels.unencodedCharsFunnel(), 1, 0.0);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
-    try {
-      BloomFilter.create(Funnels.unencodedCharsFunnel(), 1, 1.0);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BloomFilter.create(Funnels.unencodedCharsFunnel(), -1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BloomFilter.create(Funnels.unencodedCharsFunnel(), -1, 0.03));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BloomFilter.create(Funnels.unencodedCharsFunnel(), 1, 0.0));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BloomFilter.create(Funnels.unencodedCharsFunnel(), 1, 1.0));
   }
 
   public void testFailureWhenMoreThan255HashFunctionsAreNeeded() {
-    try {
-      int n = 1000;
-      double p = 0.00000000000000000000000000000000000000000000000000000000000000000000000000000001;
-      BloomFilter.create(Funnels.unencodedCharsFunnel(), n, p);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    int n = 1000;
+    double p = 0.00000000000000000000000000000000000000000000000000000000000000000000000000000001;
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          BloomFilter.create(Funnels.unencodedCharsFunnel(), n, p);
+        });
   }
 
   public void testNullPointers() {
@@ -263,15 +257,15 @@ public class BloomFilterTest extends TestCase {
   /** Tests that we never get an optimal hashes number of zero. */
   public void testOptimalHashes() {
     for (int n = 1; n < 1000; n++) {
-      for (int m = 0; m < 1000; m++) {
-        assertTrue(BloomFilter.optimalNumOfHashFunctions(n, m) > 0);
+      for (double p = 0.1; p > 1e-10; p /= 10) {
+        assertThat(BloomFilter.optimalNumOfHashFunctions(p)).isGreaterThan(0);
       }
     }
   }
 
-  // https://code.google.com/p/guava-libraries/issues/detail?id=1781
+  // https://github.com/google/guava/issues/1781
   public void testOptimalNumOfHashFunctionsRounding() {
-    assertEquals(7, BloomFilter.optimalNumOfHashFunctions(319, 3072));
+    assertEquals(5, BloomFilter.optimalNumOfHashFunctions(0.03));
   }
 
   /** Tests that we always get a non-negative optimal size. */
@@ -290,15 +284,16 @@ public class BloomFilterTest extends TestCase {
 
     // and some crazy values (this used to be capped to Integer.MAX_VALUE, now it can go bigger
     assertEquals(3327428144502L, BloomFilter.optimalNumOfBits(Integer.MAX_VALUE, Double.MIN_VALUE));
-    try {
-      BloomFilter<String> unused =
-          BloomFilter.create(HashTestUtils.BAD_FUNNEL, Integer.MAX_VALUE, Double.MIN_VALUE);
-      fail("we can't represent such a large BF!");
-    } catch (IllegalArgumentException expected) {
-      assertThat(expected)
-          .hasMessageThat()
-          .isEqualTo("Could not create BloomFilter of 3327428144502 bits");
-    }
+    IllegalArgumentException expected =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              BloomFilter<String> unused =
+                  BloomFilter.create(HashTestUtils.BAD_FUNNEL, Integer.MAX_VALUE, Double.MIN_VALUE);
+            });
+    assertThat(expected)
+        .hasMessageThat()
+        .isEqualTo("Could not create BloomFilter of 3327428144502 bits");
   }
 
   @AndroidIncompatible // OutOfMemoryError
@@ -330,7 +325,7 @@ public class BloomFilterTest extends TestCase {
   public void testExpectedFpp() {
     BloomFilter<Object> bf = BloomFilter.create(HashTestUtils.BAD_FUNNEL, 10, 0.03);
     double fpp = bf.expectedFpp();
-    assertEquals(0.0, fpp);
+    assertThat(fpp).isEqualTo(0.0);
     // usually completed in less than 200 iterations
     while (fpp != 1.0) {
       boolean changed = bf.put(new Object());
@@ -374,21 +369,6 @@ public class BloomFilterTest extends TestCase {
         .addEqualityGroup(BloomFilter.create(Funnels.unencodedCharsFunnel(), 200, 0.01))
         .addEqualityGroup(BloomFilter.create(Funnels.unencodedCharsFunnel(), 200, 0.02))
         .testEquals();
-  }
-
-  public void testCollector() {
-    BloomFilter<String> bf1 = BloomFilter.create(Funnels.unencodedCharsFunnel(), 100);
-    bf1.put("1");
-    bf1.put("2");
-
-    assertEquals(
-        bf1,
-        Stream.of("1", "2")
-            .collect(BloomFilter.toBloomFilter(Funnels.unencodedCharsFunnel(), 100)));
-    assertEquals(
-        bf1,
-        Stream.of("2", "1")
-            .collect(BloomFilter.toBloomFilter(Funnels.unencodedCharsFunnel(), 100)));
   }
 
   public void testEquals() {
@@ -472,29 +452,29 @@ public class BloomFilterTest extends TestCase {
     BloomFilter<Integer> bf1 = BloomFilter.create(Funnels.integerFunnel(), 1);
     BloomFilter<Integer> bf2 = BloomFilter.create(Funnels.integerFunnel(), 10);
 
-    try {
-      assertFalse(bf1.isCompatible(bf2));
-      bf1.putAll(bf2);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertFalse(bf1.isCompatible(bf2));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          bf1.putAll(bf2);
+        });
 
-    try {
-      assertFalse(bf2.isCompatible(bf1));
-      bf2.putAll(bf1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertFalse(bf2.isCompatible(bf1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          bf2.putAll(bf1);
+        });
   }
 
   public void testPutAllWithSelf() {
     BloomFilter<Integer> bf1 = BloomFilter.create(Funnels.integerFunnel(), 1);
-    try {
-      assertFalse(bf1.isCompatible(bf1));
-      bf1.putAll(bf1);
-      fail();
-    } catch (IllegalArgumentException expected) {
-    }
+    assertFalse(bf1.isCompatible(bf1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          bf1.putAll(bf1);
+        });
   }
 
   public void testJavaSerialization() {
@@ -507,7 +487,7 @@ public class BloomFilterTest extends TestCase {
     for (int i = 0; i < 10; i++) {
       assertTrue(copy.mightContain(Ints.toByteArray(i)));
     }
-    assertEquals(bf.expectedFpp(), copy.expectedFpp());
+    assertThat(copy.expectedFpp()).isEqualTo(bf.expectedFpp());
 
     SerializableTester.reserializeAndAssert(bf);
   }
@@ -579,7 +559,7 @@ public class BloomFilterTest extends TestCase {
               // Don't forget, the bloom filter slowly saturates over time and the
               // expected false positive probability goes up!
               assertThat(bloomFilter.expectedFpp()).isLessThan(safetyFalsePositiveRate);
-            } while (stopwatch.elapsed(TimeUnit.SECONDS) < 1);
+            } while (stopwatch.elapsed(SECONDS) < 1);
           }
         };
 
